@@ -1,6 +1,6 @@
 /**
  * @file Token.java
- * @author markJia(markjia@tencent.com)
+ * @author afcfzf(9301462@qq.com)
  */
 
 package java.stone;
