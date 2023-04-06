@@ -2,9 +2,18 @@
   "devDependencies": {
     "@babel/core": "^7.21.4",
     "@tencent/eslint-config-tencent": "^1.0.4",
+    "@types/babel-types": "^7.0.11",
+    "@types/babel__core": "^7.20.0",
+    "@types/estree": "^1.0.0",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
     "eslint": "^8.37.0",
     "typescript": "^5.0.3"
+  },
+  "dependencies": {
+    "acorn": "^8.8.2"
+  },
+  "scripts": {
+    "main": "ts-node --transpile-only ./src/index.ts"
   }
 }
