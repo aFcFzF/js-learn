@@ -17,5 +17,4 @@ import * as ESTree from 'estree';
 
 // const jsInterpreter = new Interpreter(ast as ESTree.Node);
 
-
-console.log('result: ', new Interpreter(ast as ESTree.Node).interpret());
+console.log('result: ', new Interpreter(ast as ESTree.Node).evaluate());

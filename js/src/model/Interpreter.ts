@@ -21,8 +21,8 @@ export class Interpreter<T extends ESTree.Node> {
     this.options = options || { standard: 'esNext' };
   }
 
-  public interpret(esNode?: ESTree.Node): any {
-    const instance = new Interpreter(esNode || this.node, this.options);
+  public interpret(esNode: ESTree.Node): any {
+    const instance = new Interpreter(esNode, this.options);
 
     if (instance.node.type in this.visitorMap) {
       const visitor: ES5NodeVisitor = this.visitorMap[instance.node.type as ES5NodeType];
@@ -30,5 +30,9 @@ export class Interpreter<T extends ESTree.Node> {
     }
 
     throw `${instance.node.type} not supported!`;
+  }
+
+  public evaluate(): any {
+    return this.interpret(this.node);
   }
 }
