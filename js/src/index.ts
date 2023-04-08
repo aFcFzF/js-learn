@@ -5,8 +5,8 @@
 
 // import { parse } from 'acorn';
 import { Interpreter } from './model/Interpreter';
-import { Visitor } from './model/Visitor';
 import ast from './ast.json';
+import * as ESTree from 'estree';
 
 // const code = '1 + 2';
 
@@ -15,6 +15,7 @@ import ast from './ast.json';
 //   sourceType: 'script',
 // });
 
-const jsInterpreter = new Interpreter(new Visitor());
+// const jsInterpreter = new Interpreter(ast as ESTree.Node);
 
-console.log('result: ', jsInterpreter.run(ast));
+
+console.log('result: ', new Interpreter(ast as ESTree.Node).interpret());
