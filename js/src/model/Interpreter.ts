@@ -5,6 +5,7 @@
 
 import * as ESTree from 'estree';
 import { ES5NodeType, ES5NodeVisitor, ES5VisitorMap, es5 } from '../standard/es5';
+import { Scope } from './Scope';
 
 interface InterpreterOptions {
   standard?: 'es5' | 'esNext';
@@ -15,11 +16,12 @@ export class Interpreter<T extends ESTree.Node> {
 
   public constructor(
     public node: T,
+    private scope: Scope,
     private options: InterpreterOptions = { standard: 'esNext' },
   ) {}
 
-  public interpret(esNode: ESTree.Node): any {
-    const instance = new Interpreter(esNode, this.options);
+  public interpret(esNode: ESTree.Node, scope: Scope = this.scope): any {
+    const instance = new Interpreter(esNode, scope, this.options);
 
     if (instance.node.type in this.visitorMap) {
       const visitor: ES5NodeVisitor = this.visitorMap[instance.node.type as ES5NodeType];

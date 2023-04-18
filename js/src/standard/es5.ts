@@ -3,7 +3,13 @@
  * @author afcfzf(9301462@qq.com)
  */
 
-import { BinaryExpression, Literal, Program, ExpressionStatement } from 'estree';
+import {
+  BinaryExpression,
+  Literal,
+  Program,
+  ExpressionStatement,
+  VariableDeclaration,
+} from 'estree';
 import { Interpreter } from '../model/Interpreter';
 
 export interface ES5NodeMap {
@@ -11,6 +17,7 @@ export interface ES5NodeMap {
   Literal: Literal,
   Program: Program,
   ExpressionStatement: ExpressionStatement,
+  VariableDeclaration: VariableDeclaration,
 };
 
 export type ES5VisitorMap = {
@@ -49,4 +56,10 @@ export const es5: ES5VisitorMap = {
     const { node } = itprNode;
     return itprNode.interpret(node.expression);
   },
+
+  VariableDeclaration(itprNode) {
+    const { node, sc } = itprNode;
+
+    return itprNode.interpret(node.)
+  }
 };
