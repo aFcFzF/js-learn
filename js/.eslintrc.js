@@ -17,6 +17,8 @@ module.exports = {
   },
   ignorePatterns: ['.eslintrc.js'],
   rules: {
+    '@typescript-eslint/explicit-member-accessibility': 'error',
+    "@typescript-eslint/member-ordering": 'error',
     eqeqeq: [2, 'allow-null'],
     'max-len': ['error', {
       code: 120

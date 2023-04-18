@@ -15,5 +15,6 @@
   },
   "scripts": {
     "main": "ts-node --transpile-only ./src/index.ts"
-  }
+  },
+  "license": "MIT"
 }

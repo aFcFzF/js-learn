@@ -3,12 +3,14 @@
  * @author afcfzf(9301462@qq.com)
  */
 
-import { BinaryExpression, Literal } from 'estree';
+import { BinaryExpression, Literal, Program, ExpressionStatement } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 
 export interface ES5NodeMap {
   BinaryExpression: BinaryExpression
   Literal: Literal,
+  Program: Program,
+  ExpressionStatement: ExpressionStatement,
 };
 
 export type ES5VisitorMap = {
@@ -19,16 +21,16 @@ export type ES5NodeType = keyof ES5NodeMap;
 export type ES5NodeVisitor = ES5VisitorMap[ES5NodeType];
 
 export const es5: ES5VisitorMap = {
-  BinaryExpression(intrNode) {
-    const { node: { operator, left, right } } = intrNode;
+  BinaryExpression(itprNode) {
+    const { node: { operator, left, right } } = itprNode;
 
     if (operator === '+') {
-      return intrNode.interpret(left) + intrNode.interpret(right);
+      return itprNode.interpret(left) + itprNode.interpret(right);
     }
   },
 
-  Literal(intrNode): RegExp | Literal['value'] {
-    const { node } = intrNode;
+  Literal(itprNode): RegExp | Literal['value'] {
+    const { node } = itprNode;
     if ('regex' in node) {
       // (<RegExpLiteral>node).regex
       const { regex: { pattern, flags } } = node;
@@ -36,5 +38,15 @@ export const es5: ES5VisitorMap = {
     }
 
     return node.value;
+  },
+
+  Program(itprNode) {
+    const { node } = itprNode;
+    return node.body.map(bodyNode => itprNode.interpret(bodyNode));
+  },
+
+  ExpressionStatement(itprNode) {
+    const { node } = itprNode;
+    return itprNode.interpret(node.expression);
   },
 };

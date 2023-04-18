@@ -11,15 +11,12 @@ interface InterpreterOptions {
 }
 
 export class Interpreter<T extends ESTree.Node> {
-  public node: T;
-
   private visitorMap: ES5VisitorMap = es5;
-  private options: InterpreterOptions;
 
-  constructor(node: T, options?: InterpreterOptions) {
-    this.node = node;
-    this.options = options || { standard: 'esNext' };
-  }
+  public constructor(
+    public node: T,
+    private options: InterpreterOptions = { standard: 'esNext' },
+  ) {}
 
   public interpret(esNode: ESTree.Node): any {
     const instance = new Interpreter(esNode, this.options);
