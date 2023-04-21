@@ -3,23 +3,48 @@
  * @author afcfzf(9301462@qq.com)
  */
 
-import { Variable, Kind } from './Variable';
+import { Variable, VariableKind } from './Variable';
+import { defaultContext } from './Context';
+import { hasOwnProperty } from '../utils';
 
+export enum ScopeType {
+  FUNCTION = 'function',
+  BLOCK = 'block',
+}
 
 export class Scope {
-  private targetScope: Map<string, Variable>;
+  private type: ScopeType;
 
-  public constructor(
-    public readonly type: 'function',
-    private parent: Scope | null = null,
-  ) {
-    this.targetScope = new Map<string, Variable>();
+  /**
+   * 父作用域
+   */
+  private parent: Scope | null;
+
+  /**
+   * 当前作用域
+   */
+  private scope: Record<string, Variable>;
+
+  /**
+   * 全局作用域环境申明变量/方法:
+   */
+  private globalContext: Object & Record<string, Variable> = defaultContext;
+
+  public constructor(type: ScopeType, parent: Scope | null = null) {
+    this.type = type;
+    this.parent = parent;
+    this.scope = {};
+    this.globalContext = defaultContext;
   }
 
+  /**
+   * 先从自身scope找，然后从作用域链找，最后从global找
+   * @param rawName
+   * @returns
+   */
   public search(rawName: string): Variable | null {
-    const value = this.targetScope.get(rawName);
-    if (value) {
-      return value;
+    if (hasOwnProperty(this.scope, rawName)) {
+      return this.scope[rawName];
     }
 
     if (this.parent) {
@@ -29,20 +54,20 @@ export class Scope {
     return null;
   }
 
-  public declare(kind: Kind, rawName: string, value: any): void {
+  public declare(kind: VariableKind, rawName: string, value: any): void {
     if (this.hasDefinition(rawName)) {
       console.error(`Uncaught SyntaxError: Identifier '${rawName}' has already been declared`);
       return;
     }
 
     switch (kind) {
-      case Kind.VAR:
+      case VariableKind.VAR:
         this.defineVar(rawName, value);
         break;
-      case Kind.LET:
+      case VariableKind.LET:
         this.defineLet(rawName, value);
         break;
-      case Kind.CONST:
+      case VariableKind.CONST:
         this.defineConst(rawName, value);
         break;
       default :
@@ -61,14 +86,14 @@ export class Scope {
       scope = scope.parent;
     }
 
-    scope.targetScope.set(rawName, new Variable(Kind.VAR, value));
+    scope.scope[rawName] = new Variable(VariableKind.VAR, value);
   }
 
   private defineLet(rawName: string, value: any): void {
-    this.targetScope.set(rawName, new Variable(Kind.LET, value));
+    this.scope[rawName] = new Variable(VariableKind.LET, value);
   }
 
   private defineConst(rawName: string, value: any): void {
-    this.targetScope.set(rawName, new Variable(Kind.CONST, value));
+    this.scope[rawName] = new Variable(VariableKind.CONST, value);
   }
 }

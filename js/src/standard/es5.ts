@@ -58,8 +58,8 @@ export const es5: ES5VisitorMap = {
   },
 
   VariableDeclaration(itprNode) {
-    const { node, sc } = itprNode;
+    const { node, src } = itprNode;
 
-    return itprNode.interpret(node.)
+    return itprNode.interpret(node.);
   }
 };
