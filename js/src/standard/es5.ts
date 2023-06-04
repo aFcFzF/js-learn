@@ -9,8 +9,20 @@ import {
   Program,
   ExpressionStatement,
   VariableDeclaration,
+  Identifier,
+  BinaryOperator,
+  ForStatement,
+  UpdateExpression,
+  Expression,
+  BlockStatement,
+  AssignmentExpression,
+  MemberExpression,
+  ObjectExpression,
+  Property,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
+import { Scope, ScopeType } from '../model/Scope';
+import { Variable, VariableKind } from '../model/Variable';
 
 export interface ES5NodeMap {
   BinaryExpression: BinaryExpression
@@ -18,6 +30,13 @@ export interface ES5NodeMap {
   Program: Program,
   ExpressionStatement: ExpressionStatement,
   VariableDeclaration: VariableDeclaration,
+  Identifier: Identifier,
+  ForStatement: ForStatement,
+  UpdateExpression: UpdateExpression,
+  BlockStatement: BlockStatement,
+  AssignmentExpression: AssignmentExpression,
+  MemberExpression: MemberExpression,
+  ObjectExpression: ObjectExpression,
 };
 
 export type ES5VisitorMap = {
@@ -27,13 +46,58 @@ export type ES5VisitorMap = {
 export type ES5NodeType = keyof ES5NodeMap;
 export type ES5NodeVisitor = ES5VisitorMap[ES5NodeType];
 
+const operateMap: Record<BinaryOperator, (itprNode: Interpreter<BinaryExpression>) => any> = {
+  '+': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) + itprNode.interpret(itprNode.node.right),
+  '-': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) - itprNode.interpret(itprNode.node.right),
+  '*': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) * itprNode.interpret(itprNode.node.right),
+  '/': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) / itprNode.interpret(itprNode.node.right),
+  // eslint-disable-next-line eqeqeq
+  '==': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) == itprNode.interpret(itprNode.node.right),
+  // eslint-disable-next-line eqeqeq
+  '!=': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) != itprNode.interpret(itprNode.node.right),
+  '===': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) === itprNode.interpret(itprNode.node.right),
+  '!==': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) !== itprNode.interpret(itprNode.node.right),
+  '<': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) < itprNode.interpret(itprNode.node.right),
+  '<=': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) <= itprNode.interpret(itprNode.node.right),
+  '>': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) > itprNode.interpret(itprNode.node.right),
+  '>=': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) >= itprNode.interpret(itprNode.node.right),
+  '<<': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) << itprNode.interpret(itprNode.node.right),
+  '>>': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) >> itprNode.interpret(itprNode.node.right),
+  '>>>': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) >>> itprNode.interpret(itprNode.node.right),
+  '%': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) % itprNode.interpret(itprNode.node.right),
+  '**': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) ** itprNode.interpret(itprNode.node.right),
+  '|': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) | itprNode.interpret(itprNode.node.right),
+  '^': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) ^ itprNode.interpret(itprNode.node.right),
+  '&': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) & itprNode.interpret(itprNode.node.right),
+  in: (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) in itprNode.interpret(itprNode.node.right),
+  instanceof: (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) instanceof itprNode.interpret(itprNode.node.right),
+};
+
+// const assignOperator: Record<AssignmentOperator, >;
+
+
+const getVariable = (identifier: Identifier, scope: Scope): Variable => {
+  const { name } = identifier;
+
+  const variable = scope.search(name);
+  if (!variable) {
+    throw new Error(`UpdateExpression 未找到变量: ${name}`);
+  }
+
+  return variable;
+};
+
+const getVariableValue = (identifier: Identifier, scope: Scope): any => getVariable(identifier, scope).get();
+
 export const es5: ES5VisitorMap = {
   BinaryExpression(itprNode) {
-    const { node: { operator, left, right } } = itprNode;
+    const { node: { operator } } = itprNode;
 
-    if (operator === '+') {
-      return itprNode.interpret(left) + itprNode.interpret(right);
+    if (operateMap[operator] == null) {
+      throw new Error(`operator not allow: ${operator}`);
     }
+
+    return operateMap[operator](itprNode);
   },
 
   Literal(itprNode): RegExp | Literal['value'] {
@@ -57,9 +121,98 @@ export const es5: ES5VisitorMap = {
     return itprNode.interpret(node.expression);
   },
 
+  /**
+   * 变量申明
+   * @param itprNode
+   * @returns
+   */
   VariableDeclaration(itprNode) {
-    const { node, src } = itprNode;
+    const { node, scope } = itprNode;
+    const { declarations, kind } = node;
 
-    return itprNode.interpret(node.);
-  }
+    declarations.forEach((decl) => {
+      const { id, init } = decl;
+      const key = (id as Identifier).name;
+      const value = init ? itprNode.interpret(init) : undefined;
+      if (scope.type === ScopeType.BLOCK && kind === VariableKind.VAR && scope.parent) {
+        scope.parent.declare(kind, key, value);
+      } else {
+        scope.declare(kind, key, value);
+      }
+    });
+  },
+
+  Identifier(itprNode) {
+    const { node, scope } = itprNode;
+    const { name } = node;
+    const variable = scope.search(name);
+    if (variable == null) {
+      throw new Error(`variable ${name} not exist!`);
+    }
+
+    return variable.get();
+  },
+
+  ForStatement(itprNode) {
+    const { node: { init, test, update, body } } = itprNode;
+    itprNode.interpret(init as VariableDeclaration);
+    while (itprNode.interpret(test as Expression)) {
+      itprNode.interpret(body);
+      if (update) {
+        itprNode.interpret(update);
+      }
+    }
+  },
+
+  UpdateExpression(itprNode) {
+    const { node: { operator, argument }, scope } = itprNode;
+    const variable = getVariable(argument as Identifier, scope);
+    if (operator === '++') {
+      variable.set(variable.get() + 1);
+    } else if (operator === '--') {
+      variable.set(variable.get() - 1);
+    }
+  },
+
+  BlockStatement(itprNode) {
+    const { node: { body } } = itprNode;
+    body.forEach((statement) => {
+      itprNode.interpret(statement);
+    });
+  },
+
+  AssignmentExpression(itprNode) {
+    const { node: { left, right, operator }, scope } = itprNode;
+    const leftVariable = getVariable(left as Identifier, scope);
+    const rightValue = getVariableValue(right as Identifier, scope);
+    if (operator === '=') {
+      leftVariable.set(rightValue);
+    }
+  },
+
+  MemberExpression(itprNode) {
+    const { node: { object, property, computed } } = itprNode;
+    const key = computed
+      ? itprNode.interpret(object)
+      : (property as Identifier).name;
+
+    const obj = itprNode.interpret(object);
+    return obj[key];
+  },
+
+  ObjectExpression(itprNode) {
+    const { node: { properties } } = itprNode;
+    const obj: Record<string, unknown> = {};
+    properties.forEach((prop) => {
+      if (prop.type === 'Property') {
+        const { key, value } = prop as Property;
+        const result = itprNode.interpret(value);
+        if (key.type !== 'Identifier') {
+          throw new Error(`${key.type} not exist!`);
+        }
+        obj[key.name] = result;
+      }
+    });
+    return obj;
+  },
 };

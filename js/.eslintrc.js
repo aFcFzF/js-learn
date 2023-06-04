@@ -21,7 +21,7 @@ module.exports = {
     "@typescript-eslint/member-ordering": 'error',
     eqeqeq: [2, 'allow-null'],
     'max-len': ['error', {
-      code: 120
+      code: 200,
     }],
     'no-multi-spaces': 'error',
     '@typescript-eslint/no-explicit-any': 0,

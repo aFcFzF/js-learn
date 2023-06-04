@@ -16,7 +16,7 @@ export class Interpreter<T extends ESTree.Node> {
 
   public constructor(
     public node: T,
-    private scope: Scope,
+    public scope: Scope,
     private options: InterpreterOptions = { standard: 'esNext' },
   ) {}
 

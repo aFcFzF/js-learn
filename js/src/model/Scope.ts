@@ -13,22 +13,22 @@ export enum ScopeType {
 }
 
 export class Scope {
-  private type: ScopeType;
+  public type: ScopeType;
 
   /**
    * 父作用域
    */
-  private parent: Scope | null;
+  public parent: Scope | null;
 
   /**
    * 当前作用域
    */
-  private scope: Record<string, Variable>;
+  public scope: Record<string, Variable>;
 
   /**
    * 全局作用域环境申明变量/方法:
    */
-  private globalContext: Object & Record<string, Variable> = defaultContext;
+  public globalContext: Object & Record<string, Variable> = defaultContext;
 
   public constructor(type: ScopeType, parent: Scope | null = null) {
     this.type = type;
