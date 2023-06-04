@@ -193,7 +193,7 @@ export const es5: ES5VisitorMap = {
   MemberExpression(itprNode) {
     const { node: { object, property, computed } } = itprNode;
     const key = computed
-      ? itprNode.interpret(object)
+      ? itprNode.interpret(property)
       : (property as Identifier).name;
 
     const obj = itprNode.interpret(object);
@@ -207,10 +207,15 @@ export const es5: ES5VisitorMap = {
       if (prop.type === 'Property') {
         const { key, value } = prop as Property;
         const result = itprNode.interpret(value);
-        if (key.type !== 'Identifier') {
-          throw new Error(`${key.type} not exist!`);
+        let propName: string;
+        if (key.type === 'Identifier') {
+          propName = key.name;
+        } else if (key.type === 'Literal') {
+          propName = itprNode.interpret(key);
+        } else {
+          throw new Error(`${key.type} not exist! detail: ${JSON.stringify(key)}`);
         }
-        obj[key.name] = result;
+        obj[propName] = result;
       }
     });
     return obj;

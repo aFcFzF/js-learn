@@ -18,8 +18,10 @@ import { Scope, ScopeType } from './model/Scope';
 // `;
 
 const code = `
-  const obj = {a: {b: {c: 0}}};
-  obj.a.b.c;
+const obj = {666: 1, 777: { ccc: {ddd: {eee: 111}} }},
+      ddd = {a: {b: {c: 111}}};
+obj[777].ccc.ddd.eee === ddd.a.b.c;
+
 `;
 
 const root = parse(code, {
