@@ -156,11 +156,13 @@ export const es5: ES5VisitorMap = {
   ForStatement(itprNode) {
     const { node: { init, test, update, body } } = itprNode;
     itprNode.interpret(init as VariableDeclaration);
-    while (itprNode.interpret(test as Expression)) {
-      itprNode.interpret(body);
-      if (update) {
-        itprNode.interpret(update);
-      }
+    const forScope = new Scope(ScopeType.BLOCK, itprNode.scope);
+    for (
+      itprNode.interpret(init as VariableDeclaration, forScope),
+      itprNode.interpret(test as Expression, forScope) || test,
+      update && itprNode.interpret(update, forScope),
+    ) {
+      // const signal =
     }
   },
 
