@@ -158,11 +158,11 @@ export const es5: ES5VisitorMap = {
     itprNode.interpret(init as VariableDeclaration);
     const forScope = new Scope(ScopeType.BLOCK, itprNode.scope);
     for (
-      itprNode.interpret(init as VariableDeclaration, forScope),
-      itprNode.interpret(test as Expression, forScope) || test,
-      update && itprNode.interpret(update, forScope),
+      itprNode.interpret(init as VariableDeclaration, forScope);
+      itprNode.interpret(test as Expression, forScope) || test;
+      update && itprNode.interpret(update, forScope)
     ) {
-      // const signal =
+      const signal =
     }
   },
 
@@ -176,6 +176,7 @@ export const es5: ES5VisitorMap = {
     }
   },
 
+  // for循环使用，支持 break、continue、return语句
   BlockStatement(itprNode) {
     const { node: { body } } = itprNode;
     body.forEach((statement) => {
