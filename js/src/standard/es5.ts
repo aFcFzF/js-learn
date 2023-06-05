@@ -19,10 +19,14 @@ import {
   MemberExpression,
   ObjectExpression,
   Property,
+  BreakStatement,
+  ContinueStatement,
+  ReturnStatement,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
 import { Variable, VariableKind } from '../model/Variable';
+import { Signal, SignalType } from '../model/Signal';
 
 export interface ES5NodeMap {
   BinaryExpression: BinaryExpression
@@ -37,6 +41,9 @@ export interface ES5NodeMap {
   AssignmentExpression: AssignmentExpression,
   MemberExpression: MemberExpression,
   ObjectExpression: ObjectExpression,
+  BreakStatement: BreakStatement,
+  ContinueStatement: ContinueStatement,
+  ReturnStatement: ReturnStatement,
 };
 
 export type ES5VisitorMap = {
@@ -162,7 +169,10 @@ export const es5: ES5VisitorMap = {
       itprNode.interpret(test as Expression, forScope) || test;
       update && itprNode.interpret(update, forScope)
     ) {
-      const signal =
+      const val = itprNode.interpret(body);
+      if (Signal.isBreak(val)) break;
+      if (Signal.isContinue(val)) continue;
+      if (Signal.isReturn(val)) return val.val;
     }
   },
 
@@ -179,9 +189,13 @@ export const es5: ES5VisitorMap = {
   // for循环使用，支持 break、continue、return语句
   BlockStatement(itprNode) {
     const { node: { body } } = itprNode;
-    body.forEach((statement) => {
-      itprNode.interpret(statement);
-    });
+    const blockScope = new Scope(ScopeType.BLOCK, itprNode.scope);
+    for (const statement of body) {
+      const signal = itprNode.interpret(statement, blockScope);
+      if (Signal.isSignal(signal)) {
+        return signal;
+      }
+    }
   },
 
   AssignmentExpression(itprNode) {
@@ -213,6 +227,7 @@ export const es5: ES5VisitorMap = {
         let propName: string;
         if (key.type === 'Identifier') {
           propName = key.name;
+          // 字面量
         } else if (key.type === 'Literal') {
           propName = itprNode.interpret(key);
         } else {
@@ -222,5 +237,19 @@ export const es5: ES5VisitorMap = {
       }
     });
     return obj;
+  },
+
+  BreakStatement() {
+    return new Signal(SignalType.BREAK);
+  },
+
+  ContinueStatement() {
+    return new Signal(SignalType.CONTINUE);
+  },
+
+  ReturnStatement(itprNode) {
+    const { node: { argument } } = itprNode;
+    const value = argument ? itprNode.interpret(argument) : undefined;
+    return new Signal(SignalType.RETURN, value);
   },
 };

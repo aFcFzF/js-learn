@@ -30,10 +30,13 @@ export class Scope {
    */
   public globalContext: Object & Record<string, Variable> = defaultContext;
 
-  public constructor(type: ScopeType, parent: Scope | null = null) {
+  public constructor(type: ScopeType, parent: Scope | null = null, scopeValue: Record<string, any> = {}) {
     this.type = type;
     this.parent = parent;
     this.scope = {};
+    Object.entries(scopeValue).forEach(([key, value]) => {
+      this.scope[key] = new Variable(VariableKind.CONST, value);
+    });
     this.globalContext = defaultContext;
   }
 

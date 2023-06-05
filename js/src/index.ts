@@ -21,7 +21,7 @@ const code = `
 const obj = {666: 1, 777: { ccc: {ddd: {eee: 111}} }},
       ddd = {a: {b: {c: 111}}};
 obj[777].ccc.ddd.eee === ddd.a.b.c;
-
+test0011;
 `;
 
 const root = parse(code, {
@@ -29,6 +29,6 @@ const root = parse(code, {
   sourceType: 'script',
 });
 
-const globalScope = new Scope(ScopeType.BLOCK);
+const globalScope = new Scope(ScopeType.BLOCK, null, { test0011: 'hh' });
 
 console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
