@@ -5,16 +5,20 @@
     "@types/babel-types": "^7.0.11",
     "@types/babel__core": "^7.20.0",
     "@types/estree": "^1.0.0",
+    "@types/node": "^20.2.5",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
     "eslint": "^8.37.0",
+    "glob": "^10.2.7",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.0.3"
   },
   "dependencies": {
     "acorn": "^8.8.2"
   },
   "scripts": {
-    "main": "ts-node --transpile-only ./src/index.ts"
+    "main": "ts-node -r tsconfig-paths/register --transpile-only ./src/index.ts",
+    "test": "ts-node -r tsconfig-paths/register --transpile-only ./test/262/main.ts"
   },
   "license": "MIT"
 }

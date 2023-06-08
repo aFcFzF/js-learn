@@ -5,7 +5,7 @@
 
 import { parse } from 'acorn';
 import { Interpreter } from './model/Interpreter';
-// import ast from './ast.json';
+import fnAst from '@/test/ast/fn.json';
 import * as ESTree from 'estree';
 import { Scope, ScopeType } from './model/Scope';
 
@@ -17,18 +17,19 @@ import { Scope, ScopeType } from './model/Scope';
 // obj.num.a
 // `;
 
-const code = `
-const obj = {666: 1, 777: { ccc: {ddd: {eee: 111}} }},
-      ddd = {a: {b: {c: 111}}};
-obj[777].ccc.ddd.eee === ddd.a.b.c;
-test0011;
-`;
+// const code = `
+//   const obj = {666: 1, 777: { ccc: {ddd: {eee: 111}} }},
+//         ddd = {a: {b: {c: 111}}};
+//   obj[777].ccc.ddd.eee === ddd.a.b.c;
+//   test0011;
+// `;
 
-const root = parse(code, {
-  ecmaVersion: 8,
-  sourceType: 'script',
-});
+// const root = parse(code, {
+//   ecmaVersion: 8,
+//   sourceType: 'script',
+// });
 
 const globalScope = new Scope(ScopeType.BLOCK, null, { test0011: 'hh' });
 
-console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
+// console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
+console.log('result: ', new Interpreter(fnAst as ESTree.Node, globalScope).evaluate());

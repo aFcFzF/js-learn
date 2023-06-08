@@ -30,6 +30,6 @@ export class Signal {
     return Signal.is(target, SignalType.RETURN);
   }
 
-  public constructor(public signalType: SignalType, public val?: any) {}
+  constructor(public signalType: SignalType, public val?: any) {}
 }
 

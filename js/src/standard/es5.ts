@@ -22,6 +22,7 @@ import {
   BreakStatement,
   ContinueStatement,
   ReturnStatement,
+  ArrowFunctionExpression,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
@@ -44,6 +45,7 @@ export interface ES5NodeMap {
   BreakStatement: BreakStatement,
   ContinueStatement: ContinueStatement,
   ReturnStatement: ReturnStatement,
+  ArrowFunctionExpression: ArrowFunctionExpression,
 };
 
 export type ES5VisitorMap = {
@@ -142,9 +144,9 @@ export const es5: ES5VisitorMap = {
       const key = (id as Identifier).name;
       const value = init ? itprNode.interpret(init) : undefined;
       if (scope.type === ScopeType.BLOCK && kind === VariableKind.VAR && scope.parent) {
-        scope.parent.declare(kind, key, value);
+        scope.parent.declare(VariableKind.VAR, key, value);
       } else {
-        scope.declare(kind, key, value);
+        scope.declare(kind as VariableKind, key, value);
       }
     });
   },
