@@ -303,13 +303,17 @@ export const es5: ES5VisitorMap = {
     const { node: { callee, arguments: args }, scope } = itprNode;
     const argsVal = args.map(arg => itprNode.interpret(arg));
     // 普通函数是Identifier
-    if (callee.type !== 'Identifier') {
-      throw new Error(`callee 不支持 ${JSON.stringify(callee)}`);
-    }
     const fn = getVariableValue(callee as Identifier, scope);
+    let context;
+    if (callee.type === 'MemberExpression') {
+      // obj.fn会是这种类型，所以this会指向object
+      context = itprNode.interpret(callee, scope);
+      // fn = getVariableValue(property as Identifier, scope);
+    }
+
     if (!fn) {
       throw new Error(`function not exist callee.name！${JSON.stringify(callee)}`);
     }
-    return fn(...argsVal);
+    return fn(context, ...argsVal);
   },
 };

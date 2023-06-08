@@ -30,7 +30,7 @@ export class Scope {
    */
   public globalContext: Object & Record<string, Variable> = defaultContext;
 
-  public constructor(type: ScopeType, parent: Scope | null = null, scopeValue: Record<string, any> = {}) {
+  constructor(type: ScopeType, parent: Scope | null = null, scopeValue: Record<string, any> = {}) {
     this.type = type;
     this.parent = parent;
     this.scope = {};

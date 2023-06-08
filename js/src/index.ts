@@ -29,7 +29,7 @@ import { Scope, ScopeType } from './model/Scope';
 //   sourceType: 'script',
 // });
 
-const globalScope = new Scope(ScopeType.BLOCK, null, { test0011: 'hh' });
+const globalScope = new Scope(ScopeType.BLOCK, null, { test0011: 'hh', console });
 
 // console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
 console.log('result: ', new Interpreter(fnAst as ESTree.Node, globalScope).evaluate());
