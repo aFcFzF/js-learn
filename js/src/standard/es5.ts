@@ -23,6 +23,8 @@ import {
   ContinueStatement,
   ReturnStatement,
   ArrowFunctionExpression,
+  FunctionDeclaration,
+  CallExpression,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
@@ -46,6 +48,8 @@ export interface ES5NodeMap {
   ContinueStatement: ContinueStatement,
   ReturnStatement: ReturnStatement,
   ArrowFunctionExpression: ArrowFunctionExpression,
+  FunctionDeclaration: FunctionDeclaration,
+  CallExpression: CallExpression,
 };
 
 export type ES5VisitorMap = {
@@ -253,5 +257,59 @@ export const es5: ES5VisitorMap = {
     const { node: { argument } } = itprNode;
     const value = argument ? itprNode.interpret(argument) : undefined;
     return new Signal(SignalType.RETURN, value);
+  },
+
+  ArrowFunctionExpression(itprNode) {
+    const { node: { body } } = itprNode;
+  },
+
+  /**
+   * 核心：运行时再通过闭包定义arguments
+   * this: 运行时，找到this再定义
+   * @param itprNode
+   * @returns
+   */
+  FunctionDeclaration(itprNode) {
+    const { node: { id, params, body }, scope } = itprNode;
+    const fnName: string = id?.name || '';
+    const fn = function (this: any, ...args: unknown[]): any {
+      const fnScope = new Scope(ScopeType.FUNCTION, scope);
+      params.forEach((param, idx) => {
+        if (param.type !== 'Identifier') {
+          throw new Error(`function param type not support: ${param}`);
+        }
+
+        // fn运行时，再定义
+        fnScope.declare(VariableKind.VAR, param.name, args[idx]);
+      });
+      fnScope.declare(VariableKind.VAR, 'this', this);
+
+      const result = itprNode.interpret(body, fnScope);
+      if (Signal.isReturn(result)) {
+        return result.val;
+      }
+    };
+
+    if (!fnName) {
+      throw Error('当前函数匿名！');
+    }
+
+    scope.declare(VariableKind.VAR, fnName, fn);
+
+    return fn;
+  },
+
+  CallExpression(itprNode) {
+    const { node: { callee, arguments: args }, scope } = itprNode;
+    const argsVal = args.map(arg => itprNode.interpret(arg));
+    // 普通函数是Identifier
+    if (callee.type !== 'Identifier') {
+      throw new Error(`callee 不支持 ${JSON.stringify(callee)}`);
+    }
+    const fn = getVariableValue(callee as Identifier, scope);
+    if (!fn) {
+      throw new Error(`function not exist callee.name！${JSON.stringify(callee)}`);
+    }
+    return fn(...argsVal);
   },
 };
