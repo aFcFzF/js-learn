@@ -24,12 +24,15 @@ import {
   ReturnStatement,
   ArrowFunctionExpression,
   FunctionDeclaration,
+  FunctionExpression,
   CallExpression,
+  ThisExpression,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
 import { Variable, VariableKind } from '../model/Variable';
 import { Signal, SignalType } from '../model/Signal';
+import { createFunction } from '../model/Function';
 
 export interface ES5NodeMap {
   BinaryExpression: BinaryExpression
@@ -50,6 +53,8 @@ export interface ES5NodeMap {
   ArrowFunctionExpression: ArrowFunctionExpression,
   FunctionDeclaration: FunctionDeclaration,
   CallExpression: CallExpression,
+  FunctionExpression: FunctionExpression,
+  ThisExpression: ThisExpression,
 };
 
 export type ES5VisitorMap = {
@@ -94,7 +99,7 @@ const getVariable = (identifier: Identifier, scope: Scope): Variable => {
 
   const variable = scope.search(name);
   if (!variable) {
-    throw new Error(`UpdateExpression 未找到变量: ${name}`);
+    throw new Error(`UpdateExpression 未找到变量: ${name} --- ${JSON.stringify(identifier)}`);
   }
 
   return variable;
@@ -227,10 +232,12 @@ export const es5: ES5VisitorMap = {
     const { node: { properties } } = itprNode;
     const obj: Record<string, unknown> = {};
     properties.forEach((prop) => {
+      // const obj = {name: 'xxx'}; 都是property
       if (prop.type === 'Property') {
         const { key, value } = prop as Property;
         const result = itprNode.interpret(value);
         let propName: string;
+        // TODO: 忘了是啥场景？
         if (key.type === 'Identifier') {
           propName = key.name;
           // 字面量
@@ -270,50 +277,47 @@ export const es5: ES5VisitorMap = {
    * @returns
    */
   FunctionDeclaration(itprNode) {
-    const { node: { id, params, body }, scope } = itprNode;
-    const fnName: string = id?.name || '';
-    const fn = function (this: any, ...args: unknown[]): any {
-      const fnScope = new Scope(ScopeType.FUNCTION, scope);
-      params.forEach((param, idx) => {
-        if (param.type !== 'Identifier') {
-          throw new Error(`function param type not support: ${param}`);
-        }
-
-        // fn运行时，再定义
-        fnScope.declare(VariableKind.VAR, param.name, args[idx]);
-      });
-      fnScope.declare(VariableKind.VAR, 'this', this);
-
-      const result = itprNode.interpret(body, fnScope);
-      if (Signal.isReturn(result)) {
-        return result.val;
-      }
-    };
-
+    const { node: { id }, scope } = itprNode;
+    // 一定有name
+    const fnName = id?.name;
     if (!fnName) {
-      throw Error('当前函数匿名！');
+      throw new Error('fetal error: function declare fail, must has name');
     }
 
+    const fn = createFunction(itprNode);
     scope.declare(VariableKind.VAR, fnName, fn);
-
-    return fn;
   },
 
   CallExpression(itprNode) {
     const { node: { callee, arguments: args }, scope } = itprNode;
+    // 遇到MemberExpression.ThisExpression
     const argsVal = args.map(arg => itprNode.interpret(arg));
-    // 普通函数是Identifier
-    const fn = getVariableValue(callee as Identifier, scope);
+    // 有可能是fn()或者obj.fn()
+    const fn = itprNode.interpret(callee as Identifier | MemberExpression, scope);
     let context;
     if (callee.type === 'MemberExpression') {
       // obj.fn会是这种类型，所以this会指向object
-      context = itprNode.interpret(callee, scope);
+      context = itprNode.interpret(callee.object, scope);
       // fn = getVariableValue(property as Identifier, scope);
     }
 
     if (!fn) {
       throw new Error(`function not exist callee.name！${JSON.stringify(callee)}`);
     }
-    return fn(context, ...argsVal);
+    return fn.call(context, ...argsVal);
+  },
+
+  FunctionExpression(itprNode) {
+    return createFunction(itprNode);
+  },
+
+  ThisExpression(itprNode) {
+    const { scope } = itprNode;
+    const variable = scope.search('this');
+    if (variable == null) {
+      throw new Error('ThisExpression not valid!');
+    }
+
+    return variable.get();
   },
 };

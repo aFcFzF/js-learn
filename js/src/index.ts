@@ -5,7 +5,8 @@
 
 import { parse } from 'acorn';
 import { Interpreter } from './model/Interpreter';
-import fnAst from '@/test/ast/fn.json';
+// import fnAst from '@/test/ast/fn.json';
+import thisAst from '@/test/ast/this.json';
 import * as ESTree from 'estree';
 import { Scope, ScopeType } from './model/Scope';
 
@@ -29,7 +30,10 @@ import { Scope, ScopeType } from './model/Scope';
 //   sourceType: 'script',
 // });
 
-const globalScope = new Scope(ScopeType.BLOCK, null, { test0011: 'hh', console });
+const globalScope = new Scope(ScopeType.BLOCK, null, {
+  test0011: 'hh',
+  console,
+});
 
 // console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
-console.log('result: ', new Interpreter(fnAst as ESTree.Node, globalScope).evaluate());
+console.log('result: ', new Interpreter(thisAst as ESTree.Node, globalScope).evaluate());

@@ -13,9 +13,10 @@ import { Interpreter } from '@/src/model/Interpreter';
 
 
 class Tester {
-  private static targetPaths = globSync(resolve(__dirname, '../specs/**/*.js'));
+  // private static targetPaths = globSync(resolve(__dirname, '../specs/**/*.js'));
+  private static targetPaths = resolve(__dirname, '../262/specs/expressions/addition/S11.6.1_A3.2_T2.2.js');
 
-  private static libsPath = globSync(resolve(__dirname, './harness'));
+  private static libsPath = resolve(__dirname, './lib/harness/**/*.js');
 
   private libCode = '';
 
@@ -25,13 +26,15 @@ class Tester {
   }
 
   private loadTestLib(): void {
-    Tester.libsPath.forEach((path) => {
+    const paths = globSync(Tester.libsPath);
+    paths.forEach((path) => {
       this.libCode += `/* path: ${path} */\n${readFileSync(path, { encoding: 'utf-8' })}`;
     });
   }
 
   private run(): void {
-    for (const path of Tester.targetPaths) {
+    const paths = globSync(Tester.targetPaths);
+    for (const path of paths) {
       const code = readFileSync(path, { encoding: 'utf-8' });
       this.evaluate(`${this.libCode}\n${code}`);
     }

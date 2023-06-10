@@ -1,16 +1,16 @@
 {
   "type": "Program",
   "start": 0,
-  "end": 499,
+  "end": 545,
   "body": [
     {
       "type": "FunctionDeclaration",
-      "start": 452,
-      "end": 491,
+      "start": 453,
+      "end": 536,
       "id": {
         "type": "Identifier",
-        "start": 461,
-        "end": 463,
+        "start": 462,
+        "end": 464,
         "name": "fn"
       },
       "expression": false,
@@ -19,17 +19,17 @@
       "params": [],
       "body": {
         "type": "BlockStatement",
-        "start": 467,
-        "end": 491,
+        "start": 468,
+        "end": 536,
         "body": [
           {
             "type": "ExpressionStatement",
             "start": 472,
-            "end": 489,
+            "end": 502,
             "expression": {
               "type": "CallExpression",
               "start": 472,
-              "end": 488,
+              "end": 501,
               "callee": {
                 "type": "MemberExpression",
                 "start": 472,
@@ -51,14 +51,78 @@
               },
               "arguments": [
                 {
-                  "type": "Literal",
+                  "type": "BinaryExpression",
                   "start": 484,
-                  "end": 487,
-                  "value": 111,
-                  "raw": "111"
+                  "end": 500,
+                  "left": {
+                    "type": "Literal",
+                    "start": 484,
+                    "end": 490,
+                    "value": "0011",
+                    "raw": "'0011'"
+                  },
+                  "operator": "+",
+                  "right": {
+                    "type": "Literal",
+                    "start": 493,
+                    "end": 500,
+                    "value": "hello",
+                    "raw": "'hello'"
+                  }
                 }
               ],
               "optional": false
+            }
+          },
+          {
+            "type": "ExpressionStatement",
+            "start": 505,
+            "end": 522,
+            "expression": {
+              "type": "CallExpression",
+              "start": 505,
+              "end": 521,
+              "callee": {
+                "type": "MemberExpression",
+                "start": 505,
+                "end": 518,
+                "object": {
+                  "type": "Identifier",
+                  "start": 505,
+                  "end": 512,
+                  "name": "console"
+                },
+                "property": {
+                  "type": "Identifier",
+                  "start": 513,
+                  "end": 518,
+                  "name": "error"
+                },
+                "computed": false,
+                "optional": false
+              },
+              "arguments": [
+                {
+                  "type": "Literal",
+                  "start": 519,
+                  "end": 520,
+                  "value": 1,
+                  "raw": "1"
+                }
+              ],
+              "optional": false
+            }
+          },
+          {
+            "type": "ReturnStatement",
+            "start": 525,
+            "end": 534,
+            "argument": {
+              "type": "Literal",
+              "start": 532,
+              "end": 533,
+              "value": 6,
+              "raw": "6"
             }
           }
         ]
@@ -66,16 +130,16 @@
     },
     {
       "type": "ExpressionStatement",
-      "start": 493,
-      "end": 498,
+      "start": 538,
+      "end": 543,
       "expression": {
         "type": "CallExpression",
-        "start": 493,
-        "end": 497,
+        "start": 538,
+        "end": 542,
         "callee": {
           "type": "Identifier",
-          "start": 493,
-          "end": 495,
+          "start": 538,
+          "end": 540,
           "name": "fn"
         },
         "arguments": [],
