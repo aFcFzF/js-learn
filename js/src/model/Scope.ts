@@ -58,7 +58,7 @@ export class Scope {
   }
 
   public declare(kind: VariableKind, rawName: string, value: any): void {
-    if (this.hasDefinition(rawName)) {
+    if (this.hasDefinition(kind, rawName)) {
       console.error(`Uncaught SyntaxError: Identifier '${rawName}' has already been declared`);
       return;
     }
@@ -78,8 +78,8 @@ export class Scope {
     }
   }
 
-  private hasDefinition(rawName: string): boolean {
-    return Boolean(this.search(rawName));
+  private hasDefinition(kind: VariableKind, rawName: string): boolean {
+    return [VariableKind.CONST, VariableKind.LET].includes(kind) && hasOwnProperty(this.scope, rawName);
   }
 
   private defineVar(rawName: string, value: unknown): void {

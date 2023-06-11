@@ -1,16 +1,16 @@
 {
   "type": "Program",
   "start": 0,
-  "end": 669,
+  "end": 1058,
   "body": [
     {
       "type": "FunctionDeclaration",
-      "start": 577,
-      "end": 621,
+      "start": 908,
+      "end": 1016,
       "id": {
         "type": "Identifier",
-        "start": 586,
-        "end": 592,
+        "start": 917,
+        "end": 923,
         "name": "Person"
       },
       "expression": false,
@@ -19,31 +19,31 @@
       "params": [],
       "body": {
         "type": "BlockStatement",
-        "start": 595,
-        "end": 621,
+        "start": 926,
+        "end": 1016,
         "body": [
           {
             "type": "ExpressionStatement",
-            "start": 598,
-            "end": 619,
+            "start": 930,
+            "end": 958,
             "expression": {
               "type": "AssignmentExpression",
-              "start": 598,
-              "end": 618,
+              "start": 930,
+              "end": 957,
               "operator": "=",
               "left": {
                 "type": "MemberExpression",
-                "start": 598,
-                "end": 607,
+                "start": 930,
+                "end": 939,
                 "object": {
                   "type": "ThisExpression",
-                  "start": 598,
-                  "end": 602
+                  "start": 930,
+                  "end": 934
                 },
                 "property": {
                   "type": "Identifier",
-                  "start": 603,
-                  "end": 607,
+                  "start": 935,
+                  "end": 939,
                   "name": "name"
                 },
                 "computed": false,
@@ -51,10 +51,79 @@
               },
               "right": {
                 "type": "Literal",
-                "start": 610,
-                "end": 618,
-                "value": "person",
-                "raw": "'person'"
+                "start": 942,
+                "end": 957,
+                "value": "person class!",
+                "raw": "'person class!'"
+              }
+            }
+          },
+          {
+            "type": "ExpressionStatement",
+            "start": 961,
+            "end": 1014,
+            "expression": {
+              "type": "AssignmentExpression",
+              "start": 961,
+              "end": 1014,
+              "operator": "=",
+              "left": {
+                "type": "MemberExpression",
+                "start": 961,
+                "end": 973,
+                "object": {
+                  "type": "ThisExpression",
+                  "start": 961,
+                  "end": 965
+                },
+                "property": {
+                  "type": "Identifier",
+                  "start": 966,
+                  "end": 973,
+                  "name": "sayName"
+                },
+                "computed": false,
+                "optional": false
+              },
+              "right": {
+                "type": "FunctionExpression",
+                "start": 976,
+                "end": 1014,
+                "id": null,
+                "expression": false,
+                "generator": false,
+                "async": false,
+                "params": [],
+                "body": {
+                  "type": "BlockStatement",
+                  "start": 987,
+                  "end": 1014,
+                  "body": [
+                    {
+                      "type": "ReturnStatement",
+                      "start": 993,
+                      "end": 1010,
+                      "argument": {
+                        "type": "MemberExpression",
+                        "start": 1000,
+                        "end": 1009,
+                        "object": {
+                          "type": "ThisExpression",
+                          "start": 1000,
+                          "end": 1004
+                        },
+                        "property": {
+                          "type": "Identifier",
+                          "start": 1005,
+                          "end": 1009,
+                          "name": "name"
+                        },
+                        "computed": false,
+                        "optional": false
+                      }
+                    }
+                  ]
+                }
               }
             }
           }
@@ -63,27 +132,27 @@
     },
     {
       "type": "VariableDeclaration",
-      "start": 623,
-      "end": 646,
+      "start": 1018,
+      "end": 1041,
       "declarations": [
         {
           "type": "VariableDeclarator",
-          "start": 629,
-          "end": 645,
+          "start": 1024,
+          "end": 1040,
           "id": {
             "type": "Identifier",
-            "start": 629,
-            "end": 630,
+            "start": 1024,
+            "end": 1025,
             "name": "p"
           },
           "init": {
             "type": "NewExpression",
-            "start": 633,
-            "end": 645,
+            "start": 1028,
+            "end": 1040,
             "callee": {
               "type": "Identifier",
-              "start": 637,
-              "end": 643,
+              "start": 1032,
+              "end": 1038,
               "name": "Person"
             },
             "arguments": []
@@ -94,52 +163,32 @@
     },
     {
       "type": "ExpressionStatement",
-      "start": 647,
-      "end": 667,
+      "start": 1042,
+      "end": 1054,
       "expression": {
         "type": "CallExpression",
-        "start": 647,
-        "end": 666,
+        "start": 1042,
+        "end": 1053,
         "callee": {
           "type": "MemberExpression",
-          "start": 647,
-          "end": 658,
+          "start": 1042,
+          "end": 1051,
           "object": {
             "type": "Identifier",
-            "start": 647,
-            "end": 654,
-            "name": "console"
+            "start": 1042,
+            "end": 1043,
+            "name": "p"
           },
           "property": {
             "type": "Identifier",
-            "start": 655,
-            "end": 658,
-            "name": "log"
+            "start": 1044,
+            "end": 1051,
+            "name": "sayName"
           },
           "computed": false,
           "optional": false
         },
-        "arguments": [
-          {
-            "type": "MemberExpression",
-            "start": 659,
-            "end": 665,
-            "object": {
-              "type": "Identifier",
-              "start": 659,
-              "end": 660,
-              "name": "p"
-            },
-            "property": {
-              "type": "Identifier",
-              "start": 661,
-              "end": 665,
-              "name": "name"
-            },
-            "computed": false,
-            "optional": false
-          }
-        ],
+        "arguments": [],
         "optional": false
       }
     }
