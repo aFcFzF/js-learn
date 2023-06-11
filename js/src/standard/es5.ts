@@ -31,7 +31,7 @@ import {
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
-import { Variable, VariableKind } from '../model/Variable';
+import { PropertyRef, Variable, VariableKind } from '../model/Variable';
 import { Signal, SignalType } from '../model/Signal';
 import { createFunction } from '../model/Function';
 
@@ -95,19 +95,32 @@ const operateMap: Record<BinaryOperator, (itprNode: Interpreter<BinaryExpression
 
 // const assignOperator: Record<AssignmentOperator, >;
 
+/**
+ * 分为两种节点：1. identifier、MemberExpression
+ * @param node
+ * @param itprNode
+ * @returns
+ */
+const getVariable = (node: Identifier | MemberExpression, itprNode: Interpreter<Expression>): Variable | PropertyRef => {
+  const { scope } = itprNode;
 
-const getVariable = (identifier: Identifier, scope: Scope): Variable => {
-  const { name } = identifier;
-
-  const variable = scope.search(name);
-  if (!variable) {
-    throw new Error(`UpdateExpression 未找到变量: ${name} --- ${JSON.stringify(identifier)}`);
+  if (node.type === 'Identifier') {
+    const { name } = node;
+    const variable = scope.search(name);
+    if (!variable) {
+      throw new Error(`name is not find: ${name}`);
+    }
+    return variable;
   }
 
-  return variable;
+  const { object, property } = node;
+  const obj = itprNode.interpret(object);
+  const propName = (property as Identifier).name;
+  const propRef = new PropertyRef(obj, propName);
+  return propRef;
 };
 
-const getVariableValue = (identifier: Identifier, scope: Scope): any => getVariable(identifier, scope).get();
+const getVariableValue = (node: Identifier | MemberExpression, itprNode: Interpreter<Expression>): any => getVariable(node, itprNode).get();
 
 export const es5: ES5VisitorMap = {
   BinaryExpression(itprNode) {
@@ -133,7 +146,10 @@ export const es5: ES5VisitorMap = {
 
   Program(itprNode) {
     const { node } = itprNode;
-    return node.body.map(bodyNode => itprNode.interpret(bodyNode));
+    // 这里相当于每一条语句都执行并返回
+    const statements = node.body.map(bodyNode => itprNode.interpret(bodyNode));
+    // 最终结果
+    return statements[statements.length - 1];
   },
 
   ExpressionStatement(itprNode) {
@@ -190,8 +206,8 @@ export const es5: ES5VisitorMap = {
   },
 
   UpdateExpression(itprNode) {
-    const { node: { operator, argument }, scope } = itprNode;
-    const variable = getVariable(argument as Identifier, scope);
+    const { node: { operator, argument } } = itprNode;
+    const variable = getVariable(argument as Identifier, itprNode);
     if (operator === '++') {
       variable.set(variable.get() + 1);
     } else if (operator === '--') {
@@ -212,10 +228,15 @@ export const es5: ES5VisitorMap = {
   },
 
   AssignmentExpression(itprNode) {
-    const { node: { left, right, operator }, scope } = itprNode;
-    const leftVariable = getVariable(left as Identifier, scope);
-    // rhs直接赋值，例如const a = 111; 是identifier；否则是MemberExpression
-    const rightValue = getVariableValue(right as Identifier, scope);
+    const { node: { left, right, operator } } = itprNode;
+    // lsh找Variable: 值的容器
+    const leftVariable = getVariable(left as Identifier | MemberExpression, itprNode);
+    if (leftVariable instanceof Variable && leftVariable.kind === VariableKind.CONST) {
+      throw new TypeError('const not reassign value');
+    }
+
+    // rhs直接赋值，例如const a = 111; 是identifier；否则是MemberExpression: const a = this.b;
+    const rightValue = itprNode.interpret(right);
     if (operator === '=') {
       leftVariable.set(rightValue);
     }

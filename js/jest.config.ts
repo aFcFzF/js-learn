@@ -3,7 +3,13 @@
  * @author afcfzf(9301462@qq.com)
  */
 
-export default {
+import { JestConfigWithTsJest} from 'ts-jest';
+
+const config: JestConfigWithTsJest = {
+  preset: 'ts-jest',
   verbose: true,
   testEnvironment: 'node',
 };
+
+
+export default config;
