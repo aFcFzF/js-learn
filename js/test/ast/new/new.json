@@ -1,0 +1,148 @@
+{
+  "type": "Program",
+  "start": 0,
+  "end": 669,
+  "body": [
+    {
+      "type": "FunctionDeclaration",
+      "start": 577,
+      "end": 621,
+      "id": {
+        "type": "Identifier",
+        "start": 586,
+        "end": 592,
+        "name": "Person"
+      },
+      "expression": false,
+      "generator": false,
+      "async": false,
+      "params": [],
+      "body": {
+        "type": "BlockStatement",
+        "start": 595,
+        "end": 621,
+        "body": [
+          {
+            "type": "ExpressionStatement",
+            "start": 598,
+            "end": 619,
+            "expression": {
+              "type": "AssignmentExpression",
+              "start": 598,
+              "end": 618,
+              "operator": "=",
+              "left": {
+                "type": "MemberExpression",
+                "start": 598,
+                "end": 607,
+                "object": {
+                  "type": "ThisExpression",
+                  "start": 598,
+                  "end": 602
+                },
+                "property": {
+                  "type": "Identifier",
+                  "start": 603,
+                  "end": 607,
+                  "name": "name"
+                },
+                "computed": false,
+                "optional": false
+              },
+              "right": {
+                "type": "Literal",
+                "start": 610,
+                "end": 618,
+                "value": "person",
+                "raw": "'person'"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "VariableDeclaration",
+      "start": 623,
+      "end": 646,
+      "declarations": [
+        {
+          "type": "VariableDeclarator",
+          "start": 629,
+          "end": 645,
+          "id": {
+            "type": "Identifier",
+            "start": 629,
+            "end": 630,
+            "name": "p"
+          },
+          "init": {
+            "type": "NewExpression",
+            "start": 633,
+            "end": 645,
+            "callee": {
+              "type": "Identifier",
+              "start": 637,
+              "end": 643,
+              "name": "Person"
+            },
+            "arguments": []
+          }
+        }
+      ],
+      "kind": "const"
+    },
+    {
+      "type": "ExpressionStatement",
+      "start": 647,
+      "end": 667,
+      "expression": {
+        "type": "CallExpression",
+        "start": 647,
+        "end": 666,
+        "callee": {
+          "type": "MemberExpression",
+          "start": 647,
+          "end": 658,
+          "object": {
+            "type": "Identifier",
+            "start": 647,
+            "end": 654,
+            "name": "console"
+          },
+          "property": {
+            "type": "Identifier",
+            "start": 655,
+            "end": 658,
+            "name": "log"
+          },
+          "computed": false,
+          "optional": false
+        },
+        "arguments": [
+          {
+            "type": "MemberExpression",
+            "start": 659,
+            "end": 665,
+            "object": {
+              "type": "Identifier",
+              "start": 659,
+              "end": 660,
+              "name": "p"
+            },
+            "property": {
+              "type": "Identifier",
+              "start": 661,
+              "end": 665,
+              "name": "name"
+            },
+            "computed": false,
+            "optional": false
+          }
+        ],
+        "optional": false
+      }
+    }
+  ],
+  "sourceType": "module"
+}

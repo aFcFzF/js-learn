@@ -27,6 +27,7 @@ import {
   FunctionExpression,
   CallExpression,
   ThisExpression,
+  NewExpression,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
@@ -55,6 +56,7 @@ export interface ES5NodeMap {
   CallExpression: CallExpression,
   FunctionExpression: FunctionExpression,
   ThisExpression: ThisExpression,
+  NewExpression: NewExpression,
 };
 
 export type ES5VisitorMap = {
@@ -212,6 +214,7 @@ export const es5: ES5VisitorMap = {
   AssignmentExpression(itprNode) {
     const { node: { left, right, operator }, scope } = itprNode;
     const leftVariable = getVariable(left as Identifier, scope);
+    // rhs直接赋值，例如const a = 111; 是identifier；否则是MemberExpression
     const rightValue = getVariableValue(right as Identifier, scope);
     if (operator === '=') {
       leftVariable.set(rightValue);
@@ -319,5 +322,12 @@ export const es5: ES5VisitorMap = {
     }
 
     return variable.get();
+  },
+
+  // 返回的是实例
+  NewExpression(itprNode) {
+    const { node: { callee } } = itprNode;
+    const Constructor = itprNode.interpret(callee);
+    return new Constructor();
   },
 };

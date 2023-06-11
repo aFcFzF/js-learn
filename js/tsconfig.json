@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "moduleResolution": "node",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -9,7 +9,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "noImplicitAny": true,
-    "target": "es2017",
+    "target": "ES2015",
     "sourceMap": true,
     "strict": true,
     "outDir": "./dist",
@@ -20,5 +20,14 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["./src", "./test"],
+  "include": [
+    "./src",
+    "./test/**/*",
+    "jest.config.js",
+    "./babel.config.ts"
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
 }
