@@ -10,9 +10,10 @@ import { VariableKind } from './Variable';
 import { Signal } from './Signal';
 
 export const createFunction = (itprNode: Interpreter<FunctionExpression | FunctionDeclaration>): Function => {
-  const { node: { params, body }, scope } = itprNode;
+  const { node: { params, body, id }, scope } = itprNode;
   const fn = function (...args: unknown[]): any {
     const fnScope = new Scope(ScopeType.FUNCTION, scope);
+
     params.forEach((param, idx) => {
       if (param.type !== 'Identifier') {
         throw new Error(`function param type not support: ${param}`);
@@ -21,6 +22,12 @@ export const createFunction = (itprNode: Interpreter<FunctionExpression | Functi
       // fn运行时，再定义
       fnScope.declare(VariableKind.VAR, param.name, args[idx]);
     });
+
+    // 用于内部访问
+    if (id) {
+      const { name } = id;
+      fnScope.declare(VariableKind.VAR, name, fn);
+    }
 
     // @ts-ignore
     fnScope.declare(VariableKind.VAR, 'this', this);

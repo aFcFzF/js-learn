@@ -11,6 +11,7 @@ import * as ESTree from 'estree';
 import { Scope, ScopeType } from '@/src/model/Scope';
 import { Interpreter } from '@/src/model/Interpreter';
 import chalk from 'chalk';
+import { DEFAULT_ECMA_VERSION } from '../../src/const';
 
 
 class Tester {
@@ -43,7 +44,8 @@ class Tester {
 
     for (const path of paths) {
       const { name, dir, ext } = parse(path);
-      const forld = dir.split(/\//).slice(-2).join('/');
+      const forld = dir.split(/\//).slice(-2)
+        .join('/');
       const file = `${forld}/${name}${ext}`;
       const code = readFileSync(path, { encoding: 'utf-8' });
       try {
@@ -63,7 +65,7 @@ class Tester {
 
   private evaluate(code: string): void {
     const root = acornParse(code, {
-      ecmaVersion: 8,
+      ecmaVersion: DEFAULT_ECMA_VERSION,
       sourceType: 'script',
     });
 
@@ -79,6 +81,7 @@ class Tester {
         Symbol,
         TypeError,
         Number,
+        NaN,
         // Array,
       },
     );

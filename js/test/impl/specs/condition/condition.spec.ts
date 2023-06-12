@@ -21,4 +21,18 @@ describe('三元表达式', () => {
 
     expect(testEval(alternate)).toBe(3);
   });
+
+  it('表达式不会报错', () => {
+    const code = `
+      if ((true ? undefined : true) !== undefined) {
+        throw new Test262Error('#1: (true ? undefined : true) === undefined');
+      }
+      //CHECK#2
+      if ((true ? null : true) !== null) {
+        throw new Test262Error('#2: (true ? null : true) === null');
+      }
+    `;
+
+    expect(testEval(code)).toBeFalsy();
+  });
 });

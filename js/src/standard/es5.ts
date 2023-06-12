@@ -38,6 +38,7 @@ import {
   UnaryExpression,
   UnaryOperator,
   ConditionalExpression,
+  AssignmentOperator,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
@@ -111,7 +112,28 @@ const operateMap: Record<BinaryOperator, (itprNode: Interpreter<BinaryExpression
   instanceof: itprNode => itprNode.interpret(itprNode.node.left) instanceof itprNode.interpret(itprNode.node.right),
 };
 
-// const assignOperator: Record<AssignmentOperator, >;
+//
+const assignOperator: Record<AssignmentOperator, (lhsRef: PropertyRef | Variable, rshValue: any) => any> = {
+  '%=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() % rhsValue),
+  '+=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() + rhsValue),
+  '-=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() - rhsValue),
+  '*=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() * rhsValue),
+  '/=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() / rhsValue),
+  '=': (lhsRef, rhsValue) => lhsRef.set(rhsValue),
+  '<<=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() << rhsValue),
+  '>>=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() >> rhsValue),
+  '>>>=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() >>> rhsValue),
+  '&&=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() && rhsValue),
+  '**=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() ** rhsValue),
+  '||=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() || rhsValue),
+  '|=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() | rhsValue),
+  '&=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() & rhsValue),
+  '^=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() ^ rhsValue),
+  '??=': (lhsRef, rhsValue) => {
+    const lValue = lhsRef.get();
+    lhsRef.set(lValue == null ? rhsValue : lValue);
+  },
+};
 
 const logicalOperatorMap: Record<LogicalOperator, (itprNode: Interpreter<LogicalExpression>) => any> = {
   '&&': itprNode => itprNode.interpret(itprNode.node.left) && itprNode.interpret(itprNode.node.right),
@@ -242,7 +264,8 @@ export const es5: ES5VisitorMap = {
     const { node, scope } = itprNode;
     const { name } = node;
     const variable = scope.search(name);
-    if (variable == null) {
+    // (true ? undefined : true) 这里undefined翻译成identifier.{name: 'undeinfed' }相当于变量。
+    if (variable === null) {
       throw new ReferenceError(`${name} is not defined`);
     }
 
@@ -321,9 +344,7 @@ export const es5: ES5VisitorMap = {
 
     // rhs直接赋值，例如const a = 111; 是identifier；否则是MemberExpression: const a = this.b;
     const rightValue = itprNode.interpret(right);
-    if (operator === '=') {
-      leftVariable.set(rightValue);
-    }
+    assignOperator[operator](leftVariable, rightValue);
   },
 
   MemberExpression(itprNode) {
@@ -420,6 +441,7 @@ export const es5: ES5VisitorMap = {
     return fn.call(context, ...argsVal);
   },
 
+  // TODO: FunctionExpression定义的函数，只能内部访问。除非是VariableDeclarator
   FunctionExpression(itprNode) {
     return createFunction(itprNode);
   },

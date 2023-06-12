@@ -17,6 +17,8 @@ import throwAst from '@/test/ast/throw/throw.json';
 import tryAst from '@/test/ast/try/try.json';
 import unaryAst from '@/test/ast/unary/typeof.json';
 import deleteAst from '@/test/ast/delete/delete.json';
+import iifeAst from '@/test/ast/iife/iife.json';
+import iifeRecursive from '@/test/ast/iife/recursive.json';
 import * as ESTree from 'estree';
 import { Scope, ScopeType } from './model/Scope';
 
@@ -36,7 +38,7 @@ import { Scope, ScopeType } from './model/Scope';
 // `;
 
 // const root = parse(code, {
-//   ecmaVersion: 8,
+//   ecmaVersion: DEFAULT_ECMA_VERSION,
 //   sourceType: 'script',
 // });
 
@@ -47,5 +49,5 @@ const globalScope = new Scope(ScopeType.BLOCK, null, {
 });
 
 // console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
-const result = new Interpreter(deleteAst as ESTree.Node, globalScope).evaluate();
+const result = new Interpreter(iifeRecursive as ESTree.Node, globalScope).evaluate();
 console.log('result: ', result);

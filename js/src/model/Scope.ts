@@ -23,21 +23,14 @@ export class Scope {
   /**
    * 当前作用域
    */
-  public scope: Record<string, Variable>;
-
-  /**
-   * 全局作用域环境申明变量/方法:
-   */
-  public globalContext: Object & Record<string, Variable> = defaultContext;
+  public scope: Record<string, Variable> = {};
 
   constructor(type: ScopeType, parent: Scope | null = null, scopeValue: Record<string, any> = {}) {
     this.type = type;
     this.parent = parent;
-    this.scope = {};
-    Object.entries(scopeValue).forEach(([key, value]) => {
+    Object.entries({ ...defaultContext, ...scopeValue }).forEach(([key, value]) => {
       this.scope[key] = new Variable(VariableKind.CONST, value);
     });
-    this.globalContext = defaultContext;
   }
 
   /**

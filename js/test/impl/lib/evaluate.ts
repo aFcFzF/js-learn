@@ -7,10 +7,11 @@ import { parse } from 'acorn';
 import { Interpreter } from '../../../src/model/Interpreter';
 import { Node } from 'estree';
 import { Scope, ScopeType } from '../../../src/model/Scope';
+import { DEFAULT_ECMA_VERSION } from '../../../src/const';
 
 export const testEval = (code: string): any => {
   const root = parse(code, {
-    ecmaVersion: 8,
+    ecmaVersion: DEFAULT_ECMA_VERSION,
     sourceType: 'script',
   });
 
