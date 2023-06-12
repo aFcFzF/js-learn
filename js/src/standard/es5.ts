@@ -37,6 +37,7 @@ import {
   CatchClause,
   UnaryExpression,
   UnaryOperator,
+  ConditionalExpression,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
@@ -73,6 +74,7 @@ export interface ES5NodeMap {
   TryStatement: TryStatement;
   CatchClause: CatchClause;
   UnaryExpression: UnaryExpression;
+  ConditionalExpression: ConditionalExpression;
 };
 
 export type ES5VisitorMap = {
@@ -466,11 +468,6 @@ export const es5: ES5VisitorMap = {
     return result;
   },
 
-  UnaryExpression(itprNode) {
-    const { node: { operator } } = itprNode;
-    return unaryOperatorMap[operator](itprNode);
-  },
-
   CatchClause(itprNode) {
     const { node: { param, body }, scope } = itprNode;
     return (err: any) => {
@@ -478,5 +475,15 @@ export const es5: ES5VisitorMap = {
       scope.declare(VariableKind.VAR, name, err);
       return itprNode.interpret(body);
     };
+  },
+
+  UnaryExpression(itprNode) {
+    const { node: { operator } } = itprNode;
+    return unaryOperatorMap[operator](itprNode);
+  },
+
+  ConditionalExpression(itprNode) {
+    const { node: { test, consequent, alternate } } = itprNode;
+    return itprNode.interpret(test) ? itprNode.interpret(consequent) : itprNode.interpret(alternate);
   },
 };

@@ -78,6 +78,8 @@ class Tester {
         Object,
         Symbol,
         TypeError,
+        Number,
+        // Array,
       },
     );
 
