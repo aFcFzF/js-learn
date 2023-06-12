@@ -15,6 +15,8 @@ import forAst from '@/test/ast/for/for.json';
 import ifAst from '@/test/ast/if/if.json';
 import throwAst from '@/test/ast/throw/throw.json';
 import tryAst from '@/test/ast/try/try.json';
+import unaryAst from '@/test/ast/unary/typeof.json';
+import deleteAst from '@/test/ast/delete/delete.json';
 import * as ESTree from 'estree';
 import { Scope, ScopeType } from './model/Scope';
 
@@ -45,5 +47,5 @@ const globalScope = new Scope(ScopeType.BLOCK, null, {
 });
 
 // console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
-const result = new Interpreter(tryAst as ESTree.Node, globalScope).evaluate();
+const result = new Interpreter(deleteAst as ESTree.Node, globalScope).evaluate();
 console.log('result: ', result);

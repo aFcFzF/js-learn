@@ -4,17 +4,18 @@
  */
 
 import { globSync } from 'glob';
-import { resolve } from 'path';
+import { resolve, parse } from 'path';
 import { readFileSync } from 'fs';
 import { parse as acornParse } from 'acorn';
 import * as ESTree from 'estree';
 import { Scope, ScopeType } from '@/src/model/Scope';
 import { Interpreter } from '@/src/model/Interpreter';
+import chalk from 'chalk';
 
 
 class Tester {
   // private static targetPaths = globSync(resolve(__dirname, '../specs/**/*.js'));
-  private static targetPaths = resolve(__dirname, '../262/specs/expressions/addition/S11.6.1_A2.1_T1.js');
+  private static targetPaths = resolve(__dirname, '../262/specs/**/*.js');
 
   private static libsPath = resolve(__dirname, './lib/harness/**/*.js');
 
@@ -34,10 +35,30 @@ class Tester {
 
   private run(): void {
     const paths = globSync(Tester.targetPaths);
+    const info = {
+      all: paths.length,
+      success: 0,
+      fail: 0,
+    };
+
     for (const path of paths) {
+      const { name, dir, ext } = parse(path);
+      const forld = dir.split(/\//).slice(-2).join('/');
+      const file = `${forld}/${name}${ext}`;
       const code = readFileSync(path, { encoding: 'utf-8' });
-      this.evaluate(`${this.libCode}\n${code}`);
+      try {
+        this.evaluate(`${this.libCode}\n${code}`);
+        console.log(chalk.green(`✅ PASS: ${file}`));
+        info.success += 1;
+      } catch (err) {
+        info.fail += 1;
+        console.log(chalk.red(`❌ FAIL: ${file} ----- err: ${err}`));
+      }
     }
+
+    console.log('=============');
+    console.log(`【✅ Summary】-- pass ${info.success}/${info.all}; percent: ${(info.success / info.all * 100).toFixed(2)}%`);
+    console.log(`【❌ Summary】-- fail ${info.fail}/${info.all}`);
   }
 
   private evaluate(code: string): void {
@@ -46,6 +67,7 @@ class Tester {
       sourceType: 'script',
     });
 
+    // TODO: 不支持的原生对象
     const globalScope = new Scope(
       ScopeType.BLOCK,
       null,
@@ -54,9 +76,12 @@ class Tester {
         Boolean,
         String,
         Object,
-      });
+        Symbol,
+        TypeError,
+      },
+    );
 
-    console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
+    new Interpreter(root as ESTree.Node, globalScope).evaluate();
   }
 }
 

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "moduleResolution": "node",
+    "module": "CommonJS",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -9,7 +10,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "noImplicitAny": true,
-    "target": "ES2015",
+    "target": "ES5",
     "sourceMap": true,
     "strict": true,
     "outDir": "./dist",
@@ -28,6 +29,7 @@
   ],
   "ts-node": {
     "esm": true,
+    "experimentalResolver": true,
     "experimentalSpecifierResolution": "node"
   },
 }

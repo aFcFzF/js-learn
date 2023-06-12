@@ -35,6 +35,8 @@ import {
   ThrowStatement,
   TryStatement,
   CatchClause,
+  UnaryExpression,
+  UnaryOperator,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
@@ -70,6 +72,7 @@ export interface ES5NodeMap {
   ThrowStatement: ThrowStatement;
   TryStatement: TryStatement;
   CatchClause: CatchClause;
+  UnaryExpression: UnaryExpression;
 };
 
 export type ES5VisitorMap = {
@@ -117,6 +120,28 @@ const logicalOperatorMap: Record<LogicalOperator, (itprNode: Interpreter<Logical
   },
 };
 
+const unaryOperatorMap: Record<UnaryOperator, (itprNode: Interpreter<UnaryExpression>) => any> = {
+  typeof: itprNode => typeof itprNode.interpret(itprNode.node.argument),
+  '!': itprNode => !itprNode.interpret(itprNode.node.argument),
+  '+': itprNode => +itprNode.interpret(itprNode.node.argument),
+  '-': itprNode => -itprNode.interpret(itprNode.node.argument),
+  '~': itprNode => ~itprNode.interpret(itprNode.node.argument),
+  delete: (itprNode) => {
+    const { node: { argument } } = itprNode;
+    if (argument.type === 'Literal') {
+      return delete argument.value;
+    }
+
+    if (argument.type === 'Identifier' || argument.type === 'MemberExpression') {
+      const { obj, key } = getVariable(argument, itprNode) as PropertyRef;
+      return delete obj[key];
+    }
+
+    throw new Error('unSupport delete operation!');
+  },
+  void: itprNode => typeof itprNode.interpret(itprNode.node.argument),
+};
+
 /**
  * 分为两种节点：1. identifier、MemberExpression
  * @param node
@@ -137,7 +162,17 @@ const getVariable = (node: Identifier | MemberExpression, itprNode: Interpreter<
 
   const { object, property } = node;
   const obj = itprNode.interpret(object);
-  const propName = (property as Identifier).name;
+  let propName;
+  if (property.type === 'Identifier') {
+    propName = property.name;
+  } else if (property.type === 'Literal') {
+    propName = String(property.value);
+  }
+
+  if (propName == null) {
+    throw new Error(`unSupport variable type: ${property}`);
+  }
+
   const propRef = new PropertyRef(obj, propName);
   return propRef;
 };
@@ -429,6 +464,11 @@ export const es5: ES5VisitorMap = {
     }
 
     return result;
+  },
+
+  UnaryExpression(itprNode) {
+    const { node: { operator } } = itprNode;
+    return unaryOperatorMap[operator](itprNode);
   },
 
   CatchClause(itprNode) {

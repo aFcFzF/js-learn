@@ -22,3 +22,9 @@ eshost: (https://www.npmjs.com/package/eshost) 相当于各种bin -> evaluate
 1. Q: 不能申请匿名function，是因为要在scope调用吗？可以申明匿名自执行是怎么回事，怎么找到的；
    A: 猜想下：因为自执行，估计执行时就是iife，不需要找。
 2. Q: scope 是按顺序来的吗？比如ast数组前一个是定义scope，后面再想定义scope呢（试一下const，估计是BlockStatement）
+
+
+262-test:
+|日期|通过数|通过率|备注|
+|--|--|--|--|
+|2023.06.12|588/10683|5.50%|全量|

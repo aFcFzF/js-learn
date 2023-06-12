@@ -30,7 +30,7 @@ export class Variable {
  * 可读/写obj，要保持引用。比如 obj.a.b = 1; RefPropertyIns[this.key] = 1;
  */
 export class PropertyRef {
-  constructor(private obj: Record<string, any>, private key: string) {}
+  constructor(public obj: Record<string, any>, public key: string) {}
 
   public get(): any {
     return this.obj[this.key];
