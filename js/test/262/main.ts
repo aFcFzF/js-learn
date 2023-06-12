@@ -14,7 +14,7 @@ import { Interpreter } from '@/src/model/Interpreter';
 
 class Tester {
   // private static targetPaths = globSync(resolve(__dirname, '../specs/**/*.js'));
-  private static targetPaths = resolve(__dirname, '../262/specs/expressions/addition/S11.6.1_A3.2_T2.2.js');
+  private static targetPaths = resolve(__dirname, '../262/specs/expressions/addition/S11.6.1_A2.1_T1.js');
 
   private static libsPath = resolve(__dirname, './lib/harness/**/*.js');
 
@@ -46,7 +46,15 @@ class Tester {
       sourceType: 'script',
     });
 
-    const globalScope = new Scope(ScopeType.BLOCK, null, { test0011: 'hh' });
+    const globalScope = new Scope(
+      ScopeType.BLOCK,
+      null,
+      {
+        test0011: 'hh',
+        Boolean,
+        String,
+        Object,
+      });
 
     console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
   }

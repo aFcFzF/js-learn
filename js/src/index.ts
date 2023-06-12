@@ -12,6 +12,9 @@ import { Interpreter } from './model/Interpreter';
 import arrayAst from '@/test/ast/declare/array.json';
 import newAst from '@/test/ast/new/new.json';
 import forAst from '@/test/ast/for/for.json';
+import ifAst from '@/test/ast/if/if.json';
+import throwAst from '@/test/ast/throw/throw.json';
+import tryAst from '@/test/ast/try/try.json';
 import * as ESTree from 'estree';
 import { Scope, ScopeType } from './model/Scope';
 
@@ -38,8 +41,9 @@ import { Scope, ScopeType } from './model/Scope';
 const globalScope = new Scope(ScopeType.BLOCK, null, {
   test0011: 'hh',
   console,
+  Error,
 });
 
 // console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
-const result = new Interpreter(forAst as ESTree.Node, globalScope).evaluate();
+const result = new Interpreter(tryAst as ESTree.Node, globalScope).evaluate();
 console.log('result: ', result);

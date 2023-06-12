@@ -29,6 +29,12 @@ import {
   ThisExpression,
   NewExpression,
   ArrayExpression,
+  IfStatement,
+  LogicalOperator,
+  LogicalExpression,
+  ThrowStatement,
+  TryStatement,
+  CatchClause,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
@@ -37,28 +43,33 @@ import { Signal, SignalType } from '../model/Signal';
 import { createFunction } from '../model/Function';
 
 export interface ES5NodeMap {
-  BinaryExpression: BinaryExpression
-  Literal: Literal,
-  Program: Program,
-  ExpressionStatement: ExpressionStatement,
-  VariableDeclaration: VariableDeclaration,
-  Identifier: Identifier,
-  ForStatement: ForStatement,
-  UpdateExpression: UpdateExpression,
-  BlockStatement: BlockStatement,
-  AssignmentExpression: AssignmentExpression,
-  MemberExpression: MemberExpression,
-  ObjectExpression: ObjectExpression,
-  BreakStatement: BreakStatement,
-  ContinueStatement: ContinueStatement,
-  ReturnStatement: ReturnStatement,
-  ArrowFunctionExpression: ArrowFunctionExpression,
-  FunctionDeclaration: FunctionDeclaration,
-  CallExpression: CallExpression,
-  FunctionExpression: FunctionExpression,
-  ThisExpression: ThisExpression,
-  NewExpression: NewExpression,
-  ArrayExpression: ArrayExpression
+  BinaryExpression: BinaryExpression;
+  Literal: Literal;
+  Program: Program;
+  ExpressionStatement: ExpressionStatement;
+  VariableDeclaration: VariableDeclaration;
+  Identifier: Identifier;
+  ForStatement: ForStatement;
+  UpdateExpression: UpdateExpression;
+  BlockStatement: BlockStatement;
+  AssignmentExpression: AssignmentExpression;
+  MemberExpression: MemberExpression;
+  ObjectExpression: ObjectExpression;
+  BreakStatement: BreakStatement;
+  ContinueStatement: ContinueStatement;
+  ReturnStatement: ReturnStatement;
+  ArrowFunctionExpression: ArrowFunctionExpression;
+  FunctionDeclaration: FunctionDeclaration;
+  CallExpression: CallExpression;
+  FunctionExpression: FunctionExpression;
+  ThisExpression: ThisExpression;
+  NewExpression: NewExpression;
+  ArrayExpression: ArrayExpression;
+  IfStatement: IfStatement;
+  LogicalExpression: LogicalExpression;
+  ThrowStatement: ThrowStatement;
+  TryStatement: TryStatement;
+  CatchClause: CatchClause;
 };
 
 export type ES5VisitorMap = {
@@ -69,33 +80,42 @@ export type ES5NodeType = keyof ES5NodeMap;
 export type ES5NodeVisitor = ES5VisitorMap[ES5NodeType];
 
 const operateMap: Record<BinaryOperator, (itprNode: Interpreter<BinaryExpression>) => any> = {
-  '+': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) + itprNode.interpret(itprNode.node.right),
-  '-': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) - itprNode.interpret(itprNode.node.right),
-  '*': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) * itprNode.interpret(itprNode.node.right),
-  '/': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) / itprNode.interpret(itprNode.node.right),
+  '+': itprNode => itprNode.interpret(itprNode.node.left) + itprNode.interpret(itprNode.node.right),
+  '-': itprNode => itprNode.interpret(itprNode.node.left) - itprNode.interpret(itprNode.node.right),
+  '*': itprNode => itprNode.interpret(itprNode.node.left) * itprNode.interpret(itprNode.node.right),
+  '/': itprNode => itprNode.interpret(itprNode.node.left) / itprNode.interpret(itprNode.node.right),
   // eslint-disable-next-line eqeqeq
-  '==': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) == itprNode.interpret(itprNode.node.right),
+  '==': itprNode => itprNode.interpret(itprNode.node.left) == itprNode.interpret(itprNode.node.right),
   // eslint-disable-next-line eqeqeq
-  '!=': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) != itprNode.interpret(itprNode.node.right),
-  '===': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) === itprNode.interpret(itprNode.node.right),
-  '!==': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) !== itprNode.interpret(itprNode.node.right),
-  '<': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) < itprNode.interpret(itprNode.node.right),
-  '<=': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) <= itprNode.interpret(itprNode.node.right),
-  '>': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) > itprNode.interpret(itprNode.node.right),
-  '>=': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) >= itprNode.interpret(itprNode.node.right),
-  '<<': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) << itprNode.interpret(itprNode.node.right),
-  '>>': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) >> itprNode.interpret(itprNode.node.right),
-  '>>>': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) >>> itprNode.interpret(itprNode.node.right),
-  '%': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) % itprNode.interpret(itprNode.node.right),
-  '**': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) ** itprNode.interpret(itprNode.node.right),
-  '|': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) | itprNode.interpret(itprNode.node.right),
-  '^': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) ^ itprNode.interpret(itprNode.node.right),
-  '&': (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) & itprNode.interpret(itprNode.node.right),
-  in: (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) in itprNode.interpret(itprNode.node.right),
-  instanceof: (itprNode: Interpreter<BinaryExpression>) => itprNode.interpret(itprNode.node.left) instanceof itprNode.interpret(itprNode.node.right),
+  '!=': itprNode => itprNode.interpret(itprNode.node.left) != itprNode.interpret(itprNode.node.right),
+  '===': itprNode => itprNode.interpret(itprNode.node.left) === itprNode.interpret(itprNode.node.right),
+  '!==': itprNode => itprNode.interpret(itprNode.node.left) !== itprNode.interpret(itprNode.node.right),
+  '<': itprNode => itprNode.interpret(itprNode.node.left) < itprNode.interpret(itprNode.node.right),
+  '<=': itprNode => itprNode.interpret(itprNode.node.left) <= itprNode.interpret(itprNode.node.right),
+  '>': itprNode => itprNode.interpret(itprNode.node.left) > itprNode.interpret(itprNode.node.right),
+  '>=': itprNode => itprNode.interpret(itprNode.node.left) >= itprNode.interpret(itprNode.node.right),
+  '<<': itprNode => itprNode.interpret(itprNode.node.left) << itprNode.interpret(itprNode.node.right),
+  '>>': itprNode => itprNode.interpret(itprNode.node.left) >> itprNode.interpret(itprNode.node.right),
+  '>>>': itprNode => itprNode.interpret(itprNode.node.left) >>> itprNode.interpret(itprNode.node.right),
+  '%': itprNode => itprNode.interpret(itprNode.node.left) % itprNode.interpret(itprNode.node.right),
+  '**': itprNode => itprNode.interpret(itprNode.node.left) ** itprNode.interpret(itprNode.node.right),
+  '|': itprNode => itprNode.interpret(itprNode.node.left) | itprNode.interpret(itprNode.node.right),
+  '^': itprNode => itprNode.interpret(itprNode.node.left) ^ itprNode.interpret(itprNode.node.right),
+  '&': itprNode => itprNode.interpret(itprNode.node.left) & itprNode.interpret(itprNode.node.right),
+  in: itprNode => itprNode.interpret(itprNode.node.left) in itprNode.interpret(itprNode.node.right),
+  instanceof: itprNode => itprNode.interpret(itprNode.node.left) instanceof itprNode.interpret(itprNode.node.right),
 };
 
 // const assignOperator: Record<AssignmentOperator, >;
+
+const logicalOperatorMap: Record<LogicalOperator, (itprNode: Interpreter<LogicalExpression>) => any> = {
+  '&&': itprNode => itprNode.interpret(itprNode.node.left) && itprNode.interpret(itprNode.node.right),
+  '||': itprNode => itprNode.interpret(itprNode.node.left) || itprNode.interpret(itprNode.node.right),
+  '??': (itprNode) => {
+    const leftVal = itprNode.interpret(itprNode.node.left);
+    return leftVal == null ? itprNode.interpret(itprNode.node.right) : leftVal;
+  },
+};
 
 /**
  * 分为两种节点：1. identifier、MemberExpression
@@ -220,16 +240,38 @@ export const es5: ES5VisitorMap = {
     }
   },
 
+  IfStatement(itprNode) {
+    const { node: { test, consequent, alternate } } = itprNode;
+    const pass = itprNode.interpret(test);
+    if (pass) {
+      return itprNode.interpret(consequent);
+    }
+
+    if (alternate) {
+      return itprNode.interpret(alternate);
+    }
+  },
+
+  LogicalExpression(itprNode) {
+    const { node: { operator } } = itprNode;
+    return logicalOperatorMap[operator](itprNode);
+  },
+
   // for循环使用，支持 break、continue、return语句
   BlockStatement(itprNode) {
     const { node: { body } } = itprNode;
     const blockScope = new Scope(ScopeType.BLOCK, itprNode.scope);
+    const results = [];
     for (const statement of body) {
-      const signal = itprNode.interpret(statement, blockScope);
-      if (Signal.isSignal(signal)) {
-        return signal;
+      const result = itprNode.interpret(statement, blockScope);
+      if (Signal.isSignal(result)) {
+        return result;
       }
+
+      results.push(result);
     }
+
+    return results[results.length - 1];
   },
 
   AssignmentExpression(itprNode) {
@@ -357,8 +399,44 @@ export const es5: ES5VisitorMap = {
 
   // 返回的是实例
   NewExpression(itprNode) {
-    const { node: { callee } } = itprNode;
+    const { node: { callee, arguments: args } } = itprNode;
     const Constructor = itprNode.interpret(callee);
-    return new Constructor();
+    const argsValue = args.map(arg => itprNode.interpret(arg));
+    return new Constructor(...argsValue);
+  },
+
+  ThrowStatement(itprNode) {
+    const { node: { argument } } = itprNode;
+    const err = itprNode.interpret(argument);
+    throw err;
+  },
+
+  TryStatement(itprNode) {
+    const { node: { block, handler, finalizer } } = itprNode;
+    let result;
+
+    try {
+      result = itprNode.interpret(block);
+    } catch (err) {
+      if (handler) {
+        const fn = itprNode.interpret(handler);
+        result = fn(err);
+      }
+    } finally {
+      if (finalizer) {
+        itprNode.interpret(finalizer);
+      }
+    }
+
+    return result;
+  },
+
+  CatchClause(itprNode) {
+    const { node: { param, body }, scope } = itprNode;
+    return (err: any) => {
+      const { name } = (param as Identifier);
+      scope.declare(VariableKind.VAR, name, err);
+      return itprNode.interpret(body);
+    };
   },
 };
