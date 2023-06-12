@@ -85,7 +85,7 @@ export class Scope {
   private defineVar(rawName: string, value: unknown): void {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let scope: Scope = this;
-    while (scope.parent && scope.type !== 'function') {
+    while (scope.parent && scope.type !== ScopeType.FUNCTION) {
       scope = scope.parent;
     }
 

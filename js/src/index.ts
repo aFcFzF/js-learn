@@ -9,7 +9,9 @@ import { Interpreter } from './model/Interpreter';
 // import constPrimitive from '@/test/ast/declare/const_primitive.json';
 // import fnAst from '@/test/ast/fn.json';
 // import thisAst from '@/test/ast/this.json';
+import arrayAst from '@/test/ast/declare/array.json';
 import newAst from '@/test/ast/new/new.json';
+import forAst from '@/test/ast/for/for.json';
 import * as ESTree from 'estree';
 import { Scope, ScopeType } from './model/Scope';
 
@@ -39,5 +41,5 @@ const globalScope = new Scope(ScopeType.BLOCK, null, {
 });
 
 // console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
-const result = new Interpreter(newAst as ESTree.Node, globalScope).evaluate();
+const result = new Interpreter(forAst as ESTree.Node, globalScope).evaluate();
 console.log('result: ', result);

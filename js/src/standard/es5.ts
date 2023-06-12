@@ -28,6 +28,7 @@ import {
   CallExpression,
   ThisExpression,
   NewExpression,
+  ArrayExpression,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
@@ -57,6 +58,7 @@ export interface ES5NodeMap {
   FunctionExpression: FunctionExpression,
   ThisExpression: ThisExpression,
   NewExpression: NewExpression,
+  ArrayExpression: ArrayExpression
 };
 
 export type ES5VisitorMap = {
@@ -170,6 +172,7 @@ export const es5: ES5VisitorMap = {
       const { id, init } = decl;
       const key = (id as Identifier).name;
       const value = init ? itprNode.interpret(init) : undefined;
+      // 这里好像不对
       if (scope.type === ScopeType.BLOCK && kind === VariableKind.VAR && scope.parent) {
         scope.parent.declare(VariableKind.VAR, key, value);
       } else {
@@ -183,7 +186,7 @@ export const es5: ES5VisitorMap = {
     const { name } = node;
     const variable = scope.search(name);
     if (variable == null) {
-      throw new Error(`variable ${name} not exist!`);
+      throw new ReferenceError(`${name} is not defined`);
     }
 
     return variable.get();
@@ -191,14 +194,13 @@ export const es5: ES5VisitorMap = {
 
   ForStatement(itprNode) {
     const { node: { init, test, update, body } } = itprNode;
-    itprNode.interpret(init as VariableDeclaration);
     const forScope = new Scope(ScopeType.BLOCK, itprNode.scope);
     for (
       itprNode.interpret(init as VariableDeclaration, forScope);
-      itprNode.interpret(test as Expression, forScope) || test;
+      itprNode.interpret(test as Expression, forScope);
       update && itprNode.interpret(update, forScope)
     ) {
-      const val = itprNode.interpret(body);
+      const val = itprNode.interpret(body, forScope);
       if (Signal.isBreak(val)) break;
       if (Signal.isContinue(val)) continue;
       if (Signal.isReturn(val)) return val.val;
@@ -208,6 +210,9 @@ export const es5: ES5VisitorMap = {
   UpdateExpression(itprNode) {
     const { node: { operator, argument } } = itprNode;
     const variable = getVariable(argument as Identifier, itprNode);
+    if (variable instanceof Variable && variable.kind === VariableKind.CONST) {
+      throw new TypeError('Assignment to constant variable.');
+    }
     if (operator === '++') {
       variable.set(variable.get() + 1);
     } else if (operator === '--') {
@@ -274,6 +279,11 @@ export const es5: ES5VisitorMap = {
       }
     });
     return obj;
+  },
+
+  ArrayExpression(itprNode) {
+    const { node: { elements } } = itprNode;
+    return elements.map(el => el && itprNode.interpret(el));
   },
 
   BreakStatement() {
