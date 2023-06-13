@@ -39,6 +39,8 @@ import {
   UnaryOperator,
   ConditionalExpression,
   AssignmentOperator,
+  DoWhileStatement,
+  ForInStatement,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
@@ -76,6 +78,8 @@ export interface ES5NodeMap {
   CatchClause: CatchClause;
   UnaryExpression: UnaryExpression;
   ConditionalExpression: ConditionalExpression;
+  DoWhileStatement: DoWhileStatement;
+  ForInStatement: ForInStatement;
 };
 
 export type ES5VisitorMap = {
@@ -104,7 +108,8 @@ const operateMap: Record<BinaryOperator, (itprNode: Interpreter<BinaryExpression
   '>>': itprNode => itprNode.interpret(itprNode.node.left) >> itprNode.interpret(itprNode.node.right),
   '>>>': itprNode => itprNode.interpret(itprNode.node.left) >>> itprNode.interpret(itprNode.node.right),
   '%': itprNode => itprNode.interpret(itprNode.node.left) % itprNode.interpret(itprNode.node.right),
-  '**': itprNode => itprNode.interpret(itprNode.node.left) ** itprNode.interpret(itprNode.node.right),
+  // eslint-disable-next-line no-restricted-properties
+  '**': itprNode => Math.pow(itprNode.interpret(itprNode.node.left), itprNode.interpret(itprNode.node.right)),
   '|': itprNode => itprNode.interpret(itprNode.node.left) | itprNode.interpret(itprNode.node.right),
   '^': itprNode => itprNode.interpret(itprNode.node.left) ^ itprNode.interpret(itprNode.node.right),
   '&': itprNode => itprNode.interpret(itprNode.node.left) & itprNode.interpret(itprNode.node.right),
@@ -124,14 +129,15 @@ const assignOperator: Record<AssignmentOperator, (lhsRef: PropertyRef | Variable
   '>>=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() >> rhsValue),
   '>>>=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() >>> rhsValue),
   '&&=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() && rhsValue),
-  '**=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() ** rhsValue),
+  // eslint-disable-next-line no-restricted-properties
+  '**=': (lhsRef, rhsValue) => lhsRef.set(Math.pow(lhsRef.get(), rhsValue)),
   '||=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() || rhsValue),
   '|=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() | rhsValue),
   '&=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() & rhsValue),
   '^=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() ^ rhsValue),
   '??=': (lhsRef, rhsValue) => {
     const lValue = lhsRef.get();
-    lhsRef.set(lValue == null ? rhsValue : lValue);
+    return lhsRef.set(lValue == null ? rhsValue : lValue);
   },
 };
 
@@ -276,8 +282,8 @@ export const es5: ES5VisitorMap = {
     const { node: { init, test, update, body } } = itprNode;
     const forScope = new Scope(ScopeType.BLOCK, itprNode.scope);
     for (
-      itprNode.interpret(init as VariableDeclaration, forScope);
-      itprNode.interpret(test as Expression, forScope);
+      init && itprNode.interpret(init as VariableDeclaration, forScope);
+      test ? itprNode.interpret(test as Expression, forScope) : true;
       update && itprNode.interpret(update, forScope)
     ) {
       const val = itprNode.interpret(body, forScope);
@@ -288,15 +294,71 @@ export const es5: ES5VisitorMap = {
   },
 
   UpdateExpression(itprNode) {
-    const { node: { operator, argument } } = itprNode;
+    const { node: { operator, argument, prefix } } = itprNode;
     const variable = getVariable(argument as Identifier, itprNode);
-    if (variable instanceof Variable && variable.kind === VariableKind.CONST) {
-      throw new TypeError('Assignment to constant variable.');
-    }
+    const prevVal = variable.get();
+    let afterVal;
     if (operator === '++') {
-      variable.set(variable.get() + 1);
+      afterVal = prevVal + 1;
     } else if (operator === '--') {
-      variable.set(variable.get() - 1);
+      afterVal = prevVal - 1;
+    } else {
+      throw new Error('unSupport val');
+    }
+
+    variable.set(afterVal);
+    return prefix ? afterVal : prevVal;
+  },
+
+  ForInStatement(itprNode) {
+    const { node: { left, right, body } } = itprNode;
+    const forScope = new Scope(ScopeType.BLOCK, itprNode.scope);
+    /**
+     * left可能是两种：VariableDeclaration | Pattern;
+     * for (var a in obj) | for (a in obj)
+     */
+    let propName;
+    if (left.type === 'VariableDeclaration') {
+      const { declarations } = left;
+      const { name: identifierName } = declarations[0].id as Identifier;
+      propName = identifierName;
+      forScope.declare(VariableKind.LET, propName, null);
+    } else if (left.type === 'Identifier') {
+      propName = left.name;
+    } else {
+      throw new Error('for in unSupport name');
+    }
+
+    const rightVal = itprNode.interpret(right);
+
+    let prop;
+    let result;
+    // eslint-disable-next-line no-restricted-syntax
+    for (prop in rightVal) {
+      const assignmentExp: AssignmentExpression = {
+        type: 'AssignmentExpression',
+        operator: '=',
+        left: {
+          type: 'Identifier',
+          name: propName,
+        },
+        right: {
+          type: 'Literal',
+          value: prop,
+        },
+      };
+      itprNode.interpret(assignmentExp, forScope);
+
+      result = itprNode.interpret(body, forScope);
+      if (Signal.isContinue(result)) {
+        continue;
+      } else if (Signal.isBreak(result)) {
+        break;
+      } else if (Signal.isReturn(result)) {
+        return result;
+      }
+
+      return result;
     }
   },
 
@@ -344,7 +406,7 @@ export const es5: ES5VisitorMap = {
 
     // rhs直接赋值，例如const a = 111; 是identifier；否则是MemberExpression: const a = this.b;
     const rightValue = itprNode.interpret(right);
-    assignOperator[operator](leftVariable, rightValue);
+    return assignOperator[operator](leftVariable, rightValue);
   },
 
   MemberExpression(itprNode) {
@@ -507,5 +569,22 @@ export const es5: ES5VisitorMap = {
   ConditionalExpression(itprNode) {
     const { node: { test, consequent, alternate } } = itprNode;
     return itprNode.interpret(test) ? itprNode.interpret(consequent) : itprNode.interpret(alternate);
+  },
+
+  DoWhileStatement(itprNode) {
+    const { node: { body, test } } = itprNode;
+    // 记得返回值
+    let result;
+    do {
+      result = itprNode.interpret(body);
+      if (Signal.isContinue(result)) {
+        continue;
+      } else if (Signal.isBreak(result)) {
+        break;
+      } else if (Signal.isReturn(result)) {
+        return result;
+      }
+    } while (itprNode.interpret(test));
+    return result;
   },
 };

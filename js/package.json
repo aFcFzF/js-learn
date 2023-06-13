@@ -28,7 +28,7 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^3.12.7",
-    "typescript": "^5.0.3"
+    "typescript": "4.9.5"
   },
   "dependencies": {
     "acorn": "^8.8.2",
@@ -37,7 +37,8 @@
   "scripts": {
     "main": "tsx ./src/index.ts",
     "test": "npx jest",
-    "test:262": "tsx ./test/262/main.ts"
+    "test:262": "tsx ./test/262/main.ts",
+    "test:eval5": "npx jest ./test/impl/eval5"
   },
   "resolutions": {
     "string-width": "link:./node_modules/string-width-cjs",

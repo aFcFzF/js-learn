@@ -22,3 +22,5 @@ export const testEval = (code: string): any => {
 
   return new Interpreter(root as Node, globalScope).evaluate();
 };
+
+export const evaluate = testEval;

@@ -18,11 +18,10 @@ export class Variable {
 
   public set(val: any): boolean {
     if (this.kind === VariableKind.CONST) {
-      return false;
+      throw new TypeError('Assignment to constant variable.');
     }
 
-    this.innerValue = val;
-    return true;
+    return this.innerValue = val;
   }
 }
 
