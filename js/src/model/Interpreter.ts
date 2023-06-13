@@ -3,37 +3,51 @@
  * @author afcfzf(9301462@qq.com)
  */
 
+import { es5 } from '../standard/es5';
+import { Scope, ScopeType, ScopeValue, defaultFullScopeValue } from './Scope';
+import { Walker } from './Walker';
+import { parse } from 'acorn';
 import * as ESTree from 'estree';
-import { ES5NodeType, ES5NodeVisitor, ES5VisitorMap, es5 } from '../standard/es5';
-import { Scope } from './Scope';
 
-interface InterpreterOptions {
-  standard?: 'es5' | 'esNext';
+interface InterpreterOption {
+  mode?: 'expr' | 'full' | 'custom';
+  rootScope?: Record<string, any>;
+  globalThis?: any;
 }
 
-export class Interpreter<T extends ESTree.Node> {
-  private visitorMap: ES5VisitorMap = es5;
+const rootScopeValueMap: Record<Required<InterpreterOption>['mode'], ScopeValue> = {
+  expr: {},
+  full: defaultFullScopeValue,
+  custom: {},
+};
 
-  // public scope: Scope
+export class Interpreter {
+  private rootScope: Scope;
 
-  constructor(
-    public node: T,
-    public scope: Scope,
-    private options: InterpreterOptions = { standard: 'esNext' },
-  ) {}
+  private globalThis: InterpreterOption['globalThis'];
 
-  public interpret(esNode: ESTree.Node, scope: Scope = this.scope): any {
-    const instance = new Interpreter(esNode, scope, this.options);
+  constructor(option?: InterpreterOption) {
+    const {
+      mode = 'expr',
+      rootScope,
+      globalThis,
+    } = option || {};
 
-    if (instance.node.type in this.visitorMap) {
-      const visitor: ES5NodeVisitor = this.visitorMap[instance.node.type as ES5NodeType];
-      return visitor(instance as any);
-    }
+    const scopeValue = rootScopeValueMap[mode];
 
-    throw `${instance.node.type} not supported!`;
+    this.globalThis = globalThis;
+    this.rootScope = new Scope(ScopeType.BLOCK, null, { ...scopeValue, ...rootScope });
   }
 
-  public evaluate(): any {
-    return this.interpret(this.node);
-  }
+  public evaluate = (code: string): any => {
+    const { globalThis, rootScope } = this;
+    const ast = parse(code, { ecmaVersion: 2023 }) as ESTree.Node;
+
+    new Walker({
+      globalThis,
+      scope: rootScope,
+      node: ast,
+      visitorMap: es5,
+    });
+  };
 }

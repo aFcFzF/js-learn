@@ -4,7 +4,7 @@
  */
 
 import { FunctionDeclaration, FunctionExpression } from 'estree';
-import { Interpreter } from './Interpreter';
+import { Interpreter } from './Walker';
 import { Scope, ScopeType } from './Scope';
 import { VariableKind } from './Variable';
 import { Signal } from './Signal';

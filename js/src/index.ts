@@ -4,7 +4,7 @@
  */
 
 import { parse } from 'acorn';
-import { Interpreter } from './model/Interpreter';
+import { Walker } from './model/Walker';
 // import constObjAst from '@/test/ast/declare/const_object.json';
 // import constPrimitive from '@/test/ast/declare/const_primitive.json';
 // import fnAst from '@/test/ast/fn.json';
@@ -49,5 +49,5 @@ const globalScope = new Scope(ScopeType.BLOCK, null, {
 });
 
 // console.log('result: ', new Interpreter(root as ESTree.Node, globalScope).evaluate());
-const result = new Interpreter(iifeRecursive as ESTree.Node, globalScope).evaluate();
+const result = new Walker(iifeRecursive as ESTree.Node, globalScope).evaluate();
 console.log('result: ', result);

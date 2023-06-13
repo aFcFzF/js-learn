@@ -4,8 +4,19 @@
  */
 
 import { Variable, VariableKind } from './Variable';
-import { defaultContext } from './Context';
 import { hasOwnProperty } from '../utils';
+
+export type ScopeValue = Record<string, any>;
+
+export const defaultFullScopeValue: ScopeValue = {
+  console,
+  undefined,
+  ReferenceError,
+  Array,
+  Date,
+  RegExp,
+  Object,
+};
 
 export enum ScopeType {
   FUNCTION = 'function',
@@ -28,7 +39,7 @@ export class Scope {
   constructor(type: ScopeType, parent: Scope | null = null, scopeValue: Record<string, any> = {}) {
     this.type = type;
     this.parent = parent;
-    Object.entries({ ...defaultContext, ...scopeValue }).forEach(([key, value]) => {
+    Object.entries(scopeValue).forEach(([key, value]) => {
       this.scope[key] = new Variable(VariableKind.CONST, value);
     });
   }
