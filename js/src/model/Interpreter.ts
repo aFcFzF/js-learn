@@ -14,6 +14,8 @@ interface InterpreterOptions {
 export class Interpreter<T extends ESTree.Node> {
   private visitorMap: ES5VisitorMap = es5;
 
+  // public scope: Scope
+
   constructor(
     public node: T,
     public scope: Scope,

@@ -8,4 +8,7 @@ export const defaultContext = {
   undefined,
   ReferenceError,
   eval,
+  Array,
+  Date,
+  RegExp,
 };

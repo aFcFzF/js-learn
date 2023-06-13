@@ -36,7 +36,25 @@ export const createFunction = (itprNode: Interpreter<FunctionExpression | Functi
     if (Signal.isReturn(result)) {
       return result.val;
     }
+
+    return result;
   };
+
+  Object.defineProperty(fn, 'length', {
+    value: params.length,
+    writable: false,
+    enumerable: false,
+    configurable: true,
+  });
+
+  if (id?.name) {
+    Object.defineProperty(fn, 'name', {
+      value: id.name,
+      writable: false,
+      enumerable: true,
+      configurable: true,
+    });
+  }
 
   return fn;
 };

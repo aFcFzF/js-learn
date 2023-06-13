@@ -7,10 +7,11 @@ function People(name, age){
   this.name = name;
 }
 
-d = {
+var d = {
   people: new People("eval5", 12),
   People: People
 };
+d;
   `);
 
   // constructor
@@ -29,11 +30,12 @@ test('NewExpression for built-in functions', () => {
     var date = new Date();
     var regexp = new RegExp('abc');
 
-   d =  {
+    var d = {
       array: array,
       date: date,
       regexp: regexp
-    }
+    };
+    d;
   `);
 
   deepEqual(array.length, 3);
@@ -55,10 +57,11 @@ test('NewExpression for constructor function which return object', () => {
 
     var p = new P()
 
-    d= {
+    var d = {
       o: o,
       p: p
     }
+    d;
     `);
 
   deepEqual(o, p);

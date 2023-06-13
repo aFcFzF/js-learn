@@ -41,6 +41,10 @@ import {
   AssignmentOperator,
   DoWhileStatement,
   ForInStatement,
+  SequenceExpression,
+  SwitchStatement,
+  SwitchCase,
+  WhileStatement,
 } from 'estree';
 import { Interpreter } from '../model/Interpreter';
 import { Scope, ScopeType } from '../model/Scope';
@@ -80,6 +84,10 @@ export interface ES5NodeMap {
   ConditionalExpression: ConditionalExpression;
   DoWhileStatement: DoWhileStatement;
   ForInStatement: ForInStatement;
+  SequenceExpression: SequenceExpression;
+  SwitchStatement: SwitchStatement;
+  SwitchCase: SwitchCase;
+  WhileStatement: WhileStatement;
 };
 
 export type ES5VisitorMap = {
@@ -169,7 +177,7 @@ const unaryOperatorMap: Record<UnaryOperator, (itprNode: Interpreter<UnaryExpres
 
     throw new Error('unSupport delete operation!');
   },
-  void: itprNode => typeof itprNode.interpret(itprNode.node.argument),
+  void: itprNode => void itprNode.interpret(itprNode.node.argument),
 };
 
 /**
@@ -190,11 +198,11 @@ const getVariable = (node: Identifier | MemberExpression, itprNode: Interpreter<
     return variable;
   }
 
-  const { object, property } = node;
+  const { object, property, computed } = node;
   const obj = itprNode.interpret(object);
   let propName;
   if (property.type === 'Identifier') {
-    propName = property.name;
+    propName = computed ? itprNode.interpret(property) : property.name;
   } else if (property.type === 'Literal') {
     propName = String(property.value);
   }
@@ -281,16 +289,24 @@ export const es5: ES5VisitorMap = {
   ForStatement(itprNode) {
     const { node: { init, test, update, body } } = itprNode;
     const forScope = new Scope(ScopeType.BLOCK, itprNode.scope);
+    let result;
     for (
       init && itprNode.interpret(init as VariableDeclaration, forScope);
       test ? itprNode.interpret(test as Expression, forScope) : true;
       update && itprNode.interpret(update, forScope)
     ) {
-      const val = itprNode.interpret(body, forScope);
-      if (Signal.isBreak(val)) break;
-      if (Signal.isContinue(val)) continue;
-      if (Signal.isReturn(val)) return val.val;
+      result = itprNode.interpret(body, forScope);
+      if (Signal.isBreak(result)) {
+        result = void 0;
+        break;
+      } else if (Signal.isContinue(result)) {
+        result = void 0;
+        continue;
+      } else if (Signal.isReturn(result)) {
+        return result.val;
+      }
     }
+    return result;
   },
 
   UpdateExpression(itprNode) {
@@ -319,10 +335,10 @@ export const es5: ES5VisitorMap = {
      */
     let propName;
     if (left.type === 'VariableDeclaration') {
-      const { declarations } = left;
+      const { kind, declarations } = left;
       const { name: identifierName } = declarations[0].id as Identifier;
       propName = identifierName;
-      forScope.declare(VariableKind.LET, propName, null);
+      forScope.declare(kind as VariableKind, propName, null);
     } else if (left.type === 'Identifier') {
       propName = left.name;
     } else {
@@ -331,10 +347,9 @@ export const es5: ES5VisitorMap = {
 
     const rightVal = itprNode.interpret(right);
 
-    let prop;
     let result;
     // eslint-disable-next-line no-restricted-syntax
-    for (prop in rightVal) {
+    for (const prop in rightVal) {
       const assignmentExp: AssignmentExpression = {
         type: 'AssignmentExpression',
         operator: '=',
@@ -351,15 +366,17 @@ export const es5: ES5VisitorMap = {
 
       result = itprNode.interpret(body, forScope);
       if (Signal.isContinue(result)) {
+        result = void 0;
         continue;
       } else if (Signal.isBreak(result)) {
+        result = void 0;
         break;
       } else if (Signal.isReturn(result)) {
-        return result;
+        return result.val;
       }
-
-      return result;
     }
+
+    return result;
   },
 
   IfStatement(itprNode) {
@@ -383,17 +400,15 @@ export const es5: ES5VisitorMap = {
   BlockStatement(itprNode) {
     const { node: { body } } = itprNode;
     const blockScope = new Scope(ScopeType.BLOCK, itprNode.scope);
-    const results = [];
+    let result;
     for (const statement of body) {
-      const result = itprNode.interpret(statement, blockScope);
+      result = itprNode.interpret(statement, blockScope);
       if (Signal.isSignal(result)) {
         return result;
       }
-
-      results.push(result);
     }
 
-    return results[results.length - 1];
+    return result;
   },
 
   AssignmentExpression(itprNode) {
@@ -578,13 +593,86 @@ export const es5: ES5VisitorMap = {
     do {
       result = itprNode.interpret(body);
       if (Signal.isContinue(result)) {
+        result = void 0;
         continue;
       } else if (Signal.isBreak(result)) {
+        result = void 0;
         break;
       } else if (Signal.isReturn(result)) {
-        return result;
+        return result.val;
       }
     } while (itprNode.interpret(test));
+    return result;
+  },
+
+  SequenceExpression(itprNode) {
+    const { node: { expressions } } = itprNode;
+
+    const results = expressions.map(expr => itprNode.interpret(expr));
+    return results.pop();
+  },
+
+  SwitchStatement(itprNode) {
+    const { node: { discriminant, cases } } = itprNode;
+    const discValue = itprNode.interpret(discriminant);
+    let result;
+    for (const caseNode of cases) {
+      const { test } = caseNode;
+      const condition = test == null ? true : itprNode.interpret(test) === discValue;
+      if (condition) {
+        result = itprNode.interpret(caseNode);
+        if (Signal.isBreak(result)) {
+          result = void 0;
+          break;
+        } else if (Signal.isReturn(result)) {
+          return result.val;
+        }
+        // 只要有1个条件符合，就退出
+        break;
+      }
+    }
+
+    return result;
+  },
+
+  SwitchCase(itprNode) {
+    const { node: { consequent } } = itprNode;
+    let result;
+    /**
+     * case default: {
+     *  break;
+     *  console.log(1); // 不应该被执行
+     * }
+     */
+    for (const con of consequent) {
+      result = itprNode.interpret(con);
+      if (Signal.isBreak(result)) {
+        result = void 0;
+        break;
+      } else if (Signal.isReturn(result)) {
+        return result.val;
+      }
+    }
+
+    return result;
+  },
+
+  WhileStatement(itprNode) {
+    const { node: { test, body } } = itprNode;
+    let result;
+    while (itprNode.interpret(test)) {
+      result = itprNode.interpret(body);
+      if (Signal.isBreak(result)) {
+        result = void 0;
+        break;
+      } else if (Signal.isContinue(result)) {
+        result = void 0;
+        continue;
+      } else if (Signal.isReturn(result)) {
+        return result.val;
+      }
+    }
+
     return result;
   },
 };

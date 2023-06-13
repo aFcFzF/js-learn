@@ -108,15 +108,11 @@ var obj = {
 
 test('object function name', () => {
   const a = evaluate(`
-var obj = {
-   v1(){
-  },
-
-  v2: function(){},
-
-  v: function v3(){}
-
-};
+  var obj = {
+    v1(){},
+    v2: function(){},
+    v: function v3(){}
+  };
 
  [obj.v1.name, obj.v2.name, obj.v.name]
   `);

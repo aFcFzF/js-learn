@@ -6,7 +6,7 @@
 export enum SignalType {
   BREAK = 'break',
   CONTINUE = 'continue',
-  RETURN = 'break',
+  RETURN = 'return',
 }
 
 export class Signal {
