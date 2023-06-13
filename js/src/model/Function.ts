@@ -4,12 +4,12 @@
  */
 
 import { FunctionDeclaration, FunctionExpression } from 'estree';
-import { Interpreter } from './Walker';
+import { Walker } from './Walker';
 import { Scope, ScopeType } from './Scope';
 import { VariableKind } from './Variable';
 import { Signal } from './Signal';
 
-export const createFunction = (itprNode: Interpreter<FunctionExpression | FunctionDeclaration>): Function => {
+export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDeclaration>): Function => {
   const { node: { params, body, id }, scope } = itprNode;
   const fn = function (...args: unknown[]): any {
     const fnScope = new Scope(ScopeType.FUNCTION, scope);
@@ -32,7 +32,7 @@ export const createFunction = (itprNode: Interpreter<FunctionExpression | Functi
     // @ts-ignore
     fnScope.declare(VariableKind.VAR, 'this', this);
 
-    const result = itprNode.interpret(body, fnScope);
+    const result = itprNode.walk(body, fnScope);
     if (Signal.isReturn(result)) {
       return result.val;
     }
