@@ -7,6 +7,6 @@ import { Interpreter } from '../../../src/model/Interpreter';
 
 const ins = new Interpreter();
 
-export const testEval = (code: string): any => ins.evaluate(code);
+export const testEval = (...args: Parameters<Interpreter['evaluate']>): any => ins.evaluate(...args);
 
-export const { evaluate } = ins;
+export const evaluate = testEval;

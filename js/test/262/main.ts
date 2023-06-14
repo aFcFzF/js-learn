@@ -16,7 +16,7 @@ import { DEFAULT_ECMA_VERSION } from '../../src/const';
 
 class Tester {
   // private static targetPaths = globSync(resolve(__dirname, '../specs/**/*.js'));
-  private static targetPaths = resolve(__dirname, '../262/specs/expressions/assignment/**/*.js');
+  private static targetPaths = resolve(__dirname, '../262/specs/expressions/**/*.js');
 
   private static libsPath = resolve(__dirname, './lib/harness/**/*.js');
 
@@ -35,7 +35,11 @@ class Tester {
   }
 
   private run(): void {
-    const paths = globSync(Tester.targetPaths);
+    const paths = globSync(Tester.targetPaths, { ignore: { ignored: path => {
+      const ignore = path.fullpath().includes('.todo');
+      return ignore;
+    }}});
+
     const info = {
       all: paths.length,
       success: 0,

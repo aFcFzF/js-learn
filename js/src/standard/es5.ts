@@ -45,12 +45,15 @@ import {
   SwitchStatement,
   SwitchCase,
   WhileStatement,
+  EmptyStatement,
+  Statement,
 } from 'estree';
 import { Walker } from '../model/Walker';
 import { Scope, ScopeType } from '../model/Scope';
 import { PropertyRef, Variable, VariableKind } from '../model/Variable';
 import { Signal, SignalType } from '../model/Signal';
-import { createFunction } from '../model/Function';
+import { createFunction, updateFuncInfo } from '../model/Function';
+import {getHostingStatements} from '../utils';
 
 export interface ES5NodeMap {
   BinaryExpression: BinaryExpression;
@@ -88,6 +91,7 @@ export interface ES5NodeMap {
   SwitchStatement: SwitchStatement;
   SwitchCase: SwitchCase;
   WhileStatement: WhileStatement;
+  EmptyStatement: EmptyStatement;
 };
 
 export type ES5VisitorMap = {
@@ -193,7 +197,7 @@ const getVariable = (node: Identifier | MemberExpression, itprNode: Walker<Expre
     const { name } = node;
     const variable = scope.search(name);
     if (!variable) {
-      throw new Error(`name is not find: ${name}`);
+      throw new ReferenceError(`name is not find: ${name}`);
     }
     return variable;
   }
@@ -240,11 +244,11 @@ export const es5: ES5VisitorMap = {
   },
 
   Program(itprNode) {
-    const { node } = itprNode;
-    // 这里相当于每一条语句都执行并返回
-    const statements = node.body.map(bodyNode => itprNode.walk(bodyNode));
-    // 最终结果
-    return statements[statements.length - 1];
+    const { node: { body } } = itprNode;
+    return itprNode.walk({
+      type: 'BlockStatement',
+      body: body as Statement[],
+    });
   },
 
   ExpressionStatement(itprNode) {
@@ -275,14 +279,8 @@ export const es5: ES5VisitorMap = {
   },
 
   Identifier(itprNode) {
-    const { node, scope } = itprNode;
-    const { name } = node;
-    const variable = scope.search(name);
-    // (true ? undefined : true) 这里undefined翻译成identifier.{name: 'undeinfed' }相当于变量。
-    if (variable === null) {
-      throw new ReferenceError(`${name} is not defined`);
-    }
-
+    const { node } = itprNode;
+    const variable = getVariable(node, itprNode);
     return variable.get();
   },
 
@@ -400,9 +398,26 @@ export const es5: ES5VisitorMap = {
   BlockStatement(itprNode) {
     const { node: { body } } = itprNode;
     const blockScope = new Scope(ScopeType.BLOCK, itprNode.scope);
+    const statements = getHostingStatements(body);
+
     let result;
-    for (const statement of body) {
+    /**
+     * block、Program 先扫描一遍body
+     * 出现var
+     */
+    for (const statement of statements) {
       result = itprNode.walk(statement, blockScope);
+       /**
+        * 发现signal就返回
+        * while (test) {
+        *  try {}
+        *  finally {
+        *    break; // finally 如果有signal，要上传
+        *    console.log(11); // 可以执行到吗
+        *  }
+        *  console.log(11); // 执行不到
+        * }
+       */
       if (Signal.isSignal(result)) {
         return result;
       }
@@ -453,6 +468,16 @@ export const es5: ES5VisitorMap = {
           throw new Error(`${key.type} not exist! detail: ${JSON.stringify(key)}`);
         }
         obj[propName] = result;
+
+        // 函数要更新length和fn名，因为函数node拿不到
+        if (value.type === 'FunctionExpression') {
+          /**
+           * obj = {v: function v3() {}}
+           * 此时，fnName是v3
+           */
+          const fnName = value.id?.name || propName;
+          updateFuncInfo(result, fnName, value.params.length);
+        }
       }
     });
     return obj;
@@ -559,8 +584,21 @@ export const es5: ES5VisitorMap = {
         result = fn(err);
       }
     } finally {
+      /**
+       * while (test) {
+       *  try {}
+       *  finally {
+       *    break; // finally 如果有signal，要上传
+       *    console.log(11); // 可以执行到吗
+       *  }
+       *  console.log(11); // 执行不到
+       * }
+       */
       if (finalizer) {
-        itprNode.walk(finalizer);
+        const signal = itprNode.walk(finalizer);
+        if (Signal.isSignal(signal)) {
+          result = signal;
+        }
       }
     }
 
@@ -599,7 +637,7 @@ export const es5: ES5VisitorMap = {
         result = void 0;
         break;
       } else if (Signal.isReturn(result)) {
-        return result.val;
+        return result;
       }
     } while (itprNode.walk(test));
     return result;
@@ -676,4 +714,6 @@ export const es5: ES5VisitorMap = {
 
     return result;
   },
+
+  EmptyStatement() {},
 };

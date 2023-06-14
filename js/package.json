@@ -38,7 +38,8 @@
     "main": "tsx ./src/index.ts",
     "test": "npx jest",
     "test:262": "tsx ./test/262/main.ts",
-    "test:eval5": "npx jest ./test/impl/eval5"
+    "test:eval5": "npx jest ./test/impl/eval5",
+    "test:impl": "npx jest ./test/impl/specs"
   },
   "resolutions": {
     "string-width": "link:./node_modules/string-width-cjs",

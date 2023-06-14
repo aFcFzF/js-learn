@@ -197,39 +197,14 @@ test('function call non context', () => {
 });
 
 test('function call default context', () => {
-  Interpreter.globalContextInFunction = 'eval5';
-
   const a = evaluate(`
         function call_2(){
             return this;
         }
         call_2();
-    `);
+    `, { globalThis: 'xj' });
 
-  Interpreter.globalContextInFunction = void 0;
-
-  deepEqual(a, 'eval5');
-});
-
-test('function call context', () => {
-  Interpreter.globalContextInFunction = 'eval5';
-
-  const a = evaluate(
-    `
-        function call_2(){
-            return this;
-        }
-        call_2();
-    `,
-    undefined,
-    {
-      globalContextInFunction: 'eval5 context',
-    },
-  );
-
-  Interpreter.globalContextInFunction = void 0;
-
-  deepEqual(a, 'eval5 context');
+  deepEqual(a, 'xj');
 });
 
 test('function overlap1', () => {
@@ -245,7 +220,7 @@ test('function overlap1', () => {
         }
         overlap1();
     `,
-    ctx,
+    { rootScope: ctx },
   );
 
   deepEqual(a, 2);
@@ -273,7 +248,7 @@ test('function overlap3', () => {
     `
         var overlap1 = 1;
     `,
-    ctx,
+    { rootScope: ctx },
   );
 
   const a = evaluate(
@@ -283,7 +258,7 @@ test('function overlap3', () => {
         }
         typeof overlap1;
     `,
-    ctx,
+    { rootScope: ctx },
   );
 
   deepEqual(a, 'function');
@@ -299,7 +274,7 @@ test('function overlap4', () => {
 
       typeof dat
     `,
-    ctx,
+    { rootScope: ctx },
   );
 
   deepEqual(a, 'undefined');
@@ -315,7 +290,7 @@ test('function overlap5', () => {
 
       typeof dat
     `,
-    ctx,
+    { rootScope: ctx },
   );
 
   deepEqual(a, 'function');
@@ -332,7 +307,7 @@ test('function overlap5', () => {
 
       typeof d1
     `,
-    ctx,
+    { rootScope: ctx },
   );
 
   deepEqual(a, 'undefined');

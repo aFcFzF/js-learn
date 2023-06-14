@@ -3,14 +3,16 @@
  * @author afcfzf(9301462@qq.com)
  */
 
+import { DEFAULT_INTERPRETER_MODE } from '../const';
 import { es5 } from '../standard/es5';
+import { ModeType } from '../types';
 import { Scope, ScopeType, ScopeValue, defaultFullScopeValue } from './Scope';
 import { Walker } from './Walker';
 import { parse } from 'acorn';
 import * as ESTree from 'estree';
 
-interface InterpreterOption {
-  mode?: 'expr' | 'full' | 'custom';
+export interface InterpreterOption {
+  mode?: ModeType;
   rootScope?: Record<string, any>;
   globalThis?: any;
 }
@@ -26,7 +28,7 @@ export class Interpreter {
 
   constructor(option?: InterpreterOption) {
     const {
-      mode = 'full',
+      mode = DEFAULT_INTERPRETER_MODE,
       globalThis,
       rootScope = {},
     } = option || {};
@@ -38,16 +40,24 @@ export class Interpreter {
     };
   }
 
-  public evaluate = (code: string): any => {
-    const { mode, globalThis, rootScope: rootScopeValue } = this.option;
+  public evaluate = (code: string, option?: InterpreterOption): any => {
+    const { mode, globalThis: rootGlobalThis, rootScope: rootScopeValue } = this.option;
     const ast = parse(code, { ecmaVersion: 2023 }) as ESTree.Node;
 
+    const {
+      mode: evalMode,
+      globalThis: evalGlobalThis,
+      rootScope: evalRootScope,
+    } = option || {};
+
     // 必须每次重新生成，否则实例化之后每次都在同1个作用域
-    const scopeValue = rootScopeValueMap[mode];
-    const rootScope = new Scope(ScopeType.BLOCK, null, { ...scopeValue, ...rootScopeValue });
+    const scopeValue = rootScopeValueMap[evalMode || mode];
+    const rootScopeIns = new Scope(ScopeType.BLOCK, null, { ...scopeValue, ...rootScopeValue, ...evalRootScope });
+    const rootScope = new Scope(ScopeType.BLOCK, rootScopeIns);
     const ins = new Walker({
-      globalThis,
+      globalThis: evalGlobalThis || rootGlobalThis,
       scope: rootScope,
+      rootScope: rootScope,
       node: ast,
       visitorMap: es5,
     });

@@ -9,6 +9,26 @@ import { Scope, ScopeType } from './Scope';
 import { VariableKind } from './Variable';
 import { Signal } from './Signal';
 
+export const updateFuncInfo = (fn: Function, name?: string, length?: number): void => {
+  if (name) {
+    Object.defineProperty(fn, 'name', {
+      value: name,
+      writable: false,
+      enumerable: true,
+      configurable: true,
+    });
+  }
+
+  if (length) {
+    Object.defineProperty(fn, 'length', {
+      value: length,
+      writable: false,
+      enumerable: false,
+      configurable: true,
+    });
+  }
+};
+
 export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDeclaration>): Function => {
   const { node: { params, body, id }, scope } = itprNode;
   const fn = function (...args: unknown[]): any {
@@ -40,21 +60,7 @@ export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDec
     // result 不应该返回, 例如: new Person
   };
 
-  Object.defineProperty(fn, 'length', {
-    value: params.length,
-    writable: false,
-    enumerable: false,
-    configurable: true,
-  });
-
-  if (id?.name) {
-    Object.defineProperty(fn, 'name', {
-      value: id.name,
-      writable: false,
-      enumerable: true,
-      configurable: true,
-    });
-  }
+  updateFuncInfo(fn, id?.name, params.length);
 
   return fn;
 };
