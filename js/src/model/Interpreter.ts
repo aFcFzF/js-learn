@@ -22,32 +22,37 @@ const rootScopeValueMap: Record<Required<InterpreterOption>['mode'], ScopeValue>
 };
 
 export class Interpreter {
-  private rootScope: Scope;
-
-  private globalThis: InterpreterOption['globalThis'];
+  private option: Required<InterpreterOption>;
 
   constructor(option?: InterpreterOption) {
     const {
-      mode = 'expr',
-      rootScope,
+      mode = 'full',
       globalThis,
+      rootScope = {},
     } = option || {};
 
-    const scopeValue = rootScopeValueMap[mode];
-
-    this.globalThis = globalThis;
-    this.rootScope = new Scope(ScopeType.BLOCK, null, { ...scopeValue, ...rootScope });
+    this.option = {
+      mode,
+      globalThis,
+      rootScope,
+    };
   }
 
   public evaluate = (code: string): any => {
-    const { globalThis, rootScope } = this;
+    const { mode, globalThis, rootScope: rootScopeValue } = this.option;
     const ast = parse(code, { ecmaVersion: 2023 }) as ESTree.Node;
 
-    new Walker({
+    // 必须每次重新生成，否则实例化之后每次都在同1个作用域
+    const scopeValue = rootScopeValueMap[mode];
+    const rootScope = new Scope(ScopeType.BLOCK, null, { ...scopeValue, ...rootScopeValue });
+    const ins = new Walker({
       globalThis,
       scope: rootScope,
       node: ast,
       visitorMap: es5,
     });
+
+    const result = ins.evaluate();
+    return result;
   };
 }

@@ -12,6 +12,6 @@ describe('nullish', () => {
       x;
     `;
 
-    expect(testEval(code)).toBe('person class!');
+    expect(testEval(code)).toBe(0);
   });
 });

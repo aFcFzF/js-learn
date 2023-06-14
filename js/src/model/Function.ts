@@ -37,7 +37,7 @@ export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDec
       return result.val;
     }
 
-    return result;
+    // result 不应该返回, 例如: new Person
   };
 
   Object.defineProperty(fn, 'length', {

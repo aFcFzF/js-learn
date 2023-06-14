@@ -31,17 +31,16 @@ export class Walker<T extends ESTree.Node> {
       visitorMap,
     } = option;
 
-    // 不存在则
+    this.node = node;
     this.scope = scope;
     this.globalThis = globalThis;
     this.visitorMap = visitorMap;
-    this.node = node;
   }
 
-  public walk(esNode: ESTree.Node, scope: Scope = this.scope): any {
+  public walk(esNode: ESTree.Node, scope?: Scope): any {
     const instance = new Walker({
       node: esNode,
-      scope,
+      scope: scope || this.scope,
       visitorMap: this.visitorMap,
       globalThis: this.globalThis,
     });
@@ -52,5 +51,9 @@ export class Walker<T extends ESTree.Node> {
     }
 
     throw `${instance.node.type} not supported!`;
+  }
+
+  public evaluate(): any {
+    return this.walk(this.node);
   }
 }
