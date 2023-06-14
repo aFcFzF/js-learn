@@ -68,29 +68,7 @@ class Tester {
   }
 
   private evaluate(code: string): void {
-    const root = acornParse(code, {
-      ecmaVersion: DEFAULT_ECMA_VERSION,
-      sourceType: 'script',
-    });
-
-    // TODO: 不支持的原生对象
-    const globalScope = new Scope(
-      ScopeType.BLOCK,
-      null,
-      {
-        test0011: 'hh',
-        Boolean,
-        String,
-        Object,
-        Symbol,
-        TypeError,
-        Number,
-        NaN,
-        // Array,
-      },
-    );
-
-    new Interpreter(root as ESTree.Node, globalScope).evaluate();
+    new Interpreter().evaluate(code);
   }
 }
 

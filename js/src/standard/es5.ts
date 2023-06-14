@@ -22,7 +22,7 @@ import {
   BreakStatement,
   ContinueStatement,
   ReturnStatement,
-  ArrowFunctionExpression,
+  // ArrowFunctionExpression,
   FunctionDeclaration,
   FunctionExpression,
   CallExpression,
@@ -53,7 +53,7 @@ import { Scope, ScopeType } from '../model/Scope';
 import { PropertyRef, Variable, VariableKind } from '../model/Variable';
 import { Signal, SignalType } from '../model/Signal';
 import { createFunction, updateFuncInfo } from '../model/Function';
-import {getHostingStatements} from '../utils';
+import { getHostingStatements } from '../utils';
 
 export interface ES5NodeMap {
   BinaryExpression: BinaryExpression;
@@ -71,7 +71,7 @@ export interface ES5NodeMap {
   BreakStatement: BreakStatement;
   ContinueStatement: ContinueStatement;
   ReturnStatement: ReturnStatement;
-  ArrowFunctionExpression: ArrowFunctionExpression;
+  // ArrowFunctionExpression: ArrowFunctionExpression;
   FunctionDeclaration: FunctionDeclaration;
   CallExpression: CallExpression;
   FunctionExpression: FunctionExpression;
@@ -407,7 +407,7 @@ export const es5: ES5VisitorMap = {
      */
     for (const statement of statements) {
       result = itprNode.walk(statement, blockScope);
-       /**
+      /**
         * 发现signal就返回
         * while (test) {
         *  try {}
@@ -502,9 +502,9 @@ export const es5: ES5VisitorMap = {
     return new Signal(SignalType.RETURN, value);
   },
 
-  ArrowFunctionExpression(itprNode) {
-    const { node: { body } } = itprNode;
-  },
+  // ArrowFunctionExpression(itprNode) {
+  //   const { node: { body } } = itprNode;
+  // },
 
   /**
    * 核心：运行时再通过闭包定义arguments
