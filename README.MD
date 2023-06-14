@@ -25,8 +25,18 @@ https://github.com/tc39/test262
   - Q: 不能申请匿名function，是因为要在scope调用吗？可以申明匿名自执行是怎么回事，怎么找到的；
   - A: 猜想下：因为自执行，估计执行时就是iife，不需要找。
 - 问题2：
-  - Q: scope 是按顺序来的吗？比如ast数组前一个是定义scope，后面再想定义scope呢（试一下  const，估计是BlockStatement）
-
+  - Q: scope 是按顺序来的吗？比如ast数组前一个是定义scope，后面再想定义scope呢（试一下const，估计是BlockStatement）
+- 问题3：switch case 出现return语句：实际上是function的退出，否则parse阶段就会失败, 所以处理要向上冒泡: return signal -> case -> switch -> fn
+``` javascript
+function fn() {
+    var type = '1';
+    switch(type) {
+      case '1': {
+        return 111111;
+      }
+    }
+}
+```
 
 ### 进展：
 262-test:

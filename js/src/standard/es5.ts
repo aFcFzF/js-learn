@@ -625,7 +625,7 @@ export const es5: ES5VisitorMap = {
           result = void 0;
           break;
         } else if (Signal.isReturn(result)) {
-          return result.val;
+          return result;
         }
         // 只要有1个条件符合，就退出
         break;
@@ -649,8 +649,9 @@ export const es5: ES5VisitorMap = {
       if (Signal.isBreak(result)) {
         result = void 0;
         break;
+        // 遇到return，说明在function里，直接返回signal
       } else if (Signal.isReturn(result)) {
-        return result.val;
+        return result;
       }
     }
 
