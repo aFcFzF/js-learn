@@ -184,6 +184,15 @@ const unaryOperatorMap: Record<UnaryOperator, (itprNode: Walker<UnaryExpression>
   void: itprNode => void itprNode.walk(itprNode.node.argument),
 };
 
+const getDefineVariableName = (node: Identifier | MemberExpression): string => {
+  if (node.type === 'Identifier') {
+    return node.name;
+  }
+
+  const { object } = node;
+  return getDefineVariableName(object as Identifier | MemberExpression);
+};
+
 /**
  * 分为两种节点：1. identifier、MemberExpression
  * @param node
@@ -199,27 +208,28 @@ const getVariable = (node: Identifier | MemberExpression, itprNode: Walker<Expre
     if (!variable) {
       throw new ReferenceError(`name is not find: ${name}`);
     }
+
     return variable;
   }
 
   const { object, property, computed } = node;
   const obj = itprNode.walk(object);
   let propName;
-  if (property.type === 'Identifier') {
-    propName = computed ? itprNode.walk(property) : property.name;
-  } else if (property.type === 'Literal') {
-    propName = String(property.value);
+  if (computed) {
+    propName = itprNode.walk(property);
+  } else if (property.type === 'Identifier') {
+    propName = property.name;
   }
 
   if (propName == null) {
-    throw new Error(`unSupport variable type: ${property}`);
+    throw new Error(`unSupport variable type: ${JSON.stringify(property)}`);
   }
 
   const propRef = new PropertyRef(obj, propName);
   return propRef;
 };
 
-const getVariableValue = (node: Identifier | MemberExpression, itprNode: Walker<Expression>): any => getVariable(node, itprNode).get();
+// const getVariableValue = (node: Identifier | MemberExpression, itprNode: Walker<Expression>): any => getVariable(node, itprNode).get();
 
 export const es5: ES5VisitorMap = {
   BinaryExpression(itprNode) {
@@ -427,11 +437,21 @@ export const es5: ES5VisitorMap = {
   },
 
   AssignmentExpression(itprNode) {
-    const { node: { left, right, operator } } = itprNode;
+    const { node: { left, right, operator }, scope } = itprNode;
     // lsh找Variable: 值的容器
-    const leftVariable = getVariable(left as Identifier | MemberExpression, itprNode);
-    if (leftVariable instanceof Variable && leftVariable.kind === VariableKind.CONST) {
-      throw new TypeError('const not reassign value');
+    let leftVariable;
+    try {
+      leftVariable = getVariable(left as Identifier | MemberExpression, itprNode);
+    } catch (err) {
+      // 变量说明不存在；创建一个
+      if (err instanceof ReferenceError && operator === '=' && left.type === 'Identifier') {
+        const rootScope = scope.getRootScope();
+        const name = getDefineVariableName(left);
+        leftVariable = new Variable(VariableKind.VAR, undefined);
+        rootScope.scopeValue[name] = leftVariable;
+      } else {
+        throw err;
+      }
     }
 
     // rhs直接赋值，例如const a = 111; 是identifier；否则是MemberExpression: const a = this.b;

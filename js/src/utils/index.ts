@@ -10,8 +10,26 @@ export const hasOwnProperty = (
   propName: string,
 ): boolean => ({}).hasOwnProperty.call(obj, propName);
 
+/**
+ * 得到重排host后的statement
+ * var a = 1;
+ * function a() {} // a结果是1
+ * @param body 函数
+ * @returns
+ */
 export const getHostingStatements = (body: Statement[]): Statement[] => {
-  const hostingStats: Statement[] = body.filter(node => node.type === 'FunctionDeclaration');
-  const normalStats: Statement[] = body.filter(node => node.type !== 'FunctionDeclaration');
-  return [...hostingStats, ...normalStats];
+  const functionHostingStats: Statement[] = [];
+  const varHostingStates: Statement[] = [];
+  const normalStats: Statement[] = [];
+
+  for (const statement of body) {
+    if (statement.type === 'FunctionDeclaration') {
+      functionHostingStats.push(statement);
+    } else if (statement.type === 'VariableDeclaration' && statement.kind === 'var') {
+      varHostingStates.push(statement);
+    } else {
+      normalStats.push(statement);
+    }
+  }
+  return [...functionHostingStats, ...varHostingStates, ...normalStats];
 };

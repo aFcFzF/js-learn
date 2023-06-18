@@ -17,20 +17,12 @@ import { Interpreter } from './model/Interpreter';
 // `;
 
 const code = `
-var iterations = 0;
-var iter = function*() {
-  iterations += 1;
-}();
+var ttx=1;
+function ttx(name){
+  return "hello " + name;
+}
 
-var callCount = 0;
-var f;
-f = ([...[]]) => {
-  assert.sameValue(iterations, 1);
-  callCount = callCount + 1;
-};
-
-f(iter);
-assert.sameValue(callCount, 1, 'arrow function invoked exactly once');
+ttx
 `;
 
 console.log('result: ', new Interpreter().evaluate(code));

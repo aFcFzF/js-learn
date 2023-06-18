@@ -6,9 +6,9 @@
 import { Variable, VariableKind } from './Variable';
 import { hasOwnProperty } from '../utils';
 
-export type ScopeValue = Record<string, any>;
+export type ScopeData = Record<string, any>;
 
-export const defaultFullScopeValue: ScopeValue = {
+export const defaultFullScopeData: ScopeData = {
   console,
   undefined,
   ReferenceError,
@@ -23,6 +23,8 @@ export enum ScopeType {
   BLOCK = 'block',
 }
 
+export type ScopeValue = Record<string, Variable>;
+
 export class Scope {
   public type: ScopeType;
 
@@ -34,13 +36,13 @@ export class Scope {
   /**
    * 当前作用域
    */
-  public scope: Record<string, Variable> = {};
+  public scopeValue: ScopeValue = {};
 
   constructor(type: ScopeType, parent: Scope | null = null, scopeValue: Record<string, any> = {}) {
     this.type = type;
     this.parent = parent;
     Object.entries(scopeValue).forEach(([key, value]) => {
-      this.scope[key] = new Variable(VariableKind.CONST, value);
+      this.scopeValue[key] = new Variable(VariableKind.CONST, value);
     });
   }
 
@@ -50,8 +52,8 @@ export class Scope {
    * @returns
    */
   public search(rawName: string): Variable | null {
-    if (hasOwnProperty(this.scope, rawName)) {
-      return this.scope[rawName];
+    if (hasOwnProperty(this.scopeValue, rawName)) {
+      return this.scopeValue[rawName];
     }
 
     if (this.parent) {
@@ -59,6 +61,19 @@ export class Scope {
     }
 
     return null;
+  }
+
+  /**
+   * 直接读取变量时，不存在就创建
+   * @param rawName
+   * @returns
+   */
+  public getRootScope(): Scope {
+    if (this.parent) {
+      return this.parent.getRootScope();
+    }
+
+    return this;
   }
 
   public declare(kind: VariableKind, rawName: string, value: any): void {
@@ -83,7 +98,7 @@ export class Scope {
   }
 
   private hasDefinition(kind: VariableKind, rawName: string): boolean {
-    return [VariableKind.CONST, VariableKind.LET].includes(kind) && hasOwnProperty(this.scope, rawName);
+    return [VariableKind.CONST, VariableKind.LET].includes(kind) && hasOwnProperty(this.scopeValue, rawName);
   }
 
   private defineVar(rawName: string, value: unknown): void {
@@ -93,14 +108,14 @@ export class Scope {
       scope = scope.parent;
     }
 
-    scope.scope[rawName] = new Variable(VariableKind.VAR, value);
+    scope.scopeValue[rawName] = new Variable(VariableKind.VAR, value);
   }
 
   private defineLet(rawName: string, value: any): void {
-    this.scope[rawName] = new Variable(VariableKind.LET, value);
+    this.scopeValue[rawName] = new Variable(VariableKind.LET, value);
   }
 
   private defineConst(rawName: string, value: any): void {
-    this.scope[rawName] = new Variable(VariableKind.CONST, value);
+    this.scopeValue[rawName] = new Variable(VariableKind.CONST, value);
   }
 }
