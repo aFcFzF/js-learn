@@ -29,7 +29,7 @@ test('with call expression', () => {
   const { a, b } = evaluate(`
 var b;
 var a = (get() , 2);
-
+yarn
 function get(){
   b = 3;
 }
