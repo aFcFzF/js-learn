@@ -16,14 +16,19 @@ import { Interpreter } from './model/Interpreter';
 //  d = {a: a, b: b};
 // `;
 
-const code = `
-var ttx=1;
-function ttx(name){
-  return "hello " + name;
-}
+// const code = `
+// var tmp = 1;
+// function f() {
+//  console.log(tmp);
+//  if(false) {
+// 	var tmp = 'hxd'
+//  }
+// }
+// f()
+// `;
 
-ttx
+const code = `
+  a = 2;
 `;
 
 console.log('result: ', new Interpreter().evaluate(code));
-

@@ -64,3 +64,5 @@ export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDec
 
   return fn;
 };
+
+// export const scanVariable

@@ -163,7 +163,17 @@ const logicalOperatorMap: Record<LogicalOperator, (itprNode: Walker<LogicalExpre
 };
 
 const unaryOperatorMap: Record<UnaryOperator, (itprNode: Walker<UnaryExpression>) => any> = {
-  typeof: itprNode => typeof itprNode.walk(itprNode.node.argument),
+  typeof: itprNode => {
+    try {
+      return typeof itprNode.walk(itprNode.node.argument);
+    } catch (err) {
+      if (err instanceof ReferenceError) {
+        return 'undefined';
+      }
+
+      throw err;
+    }
+  },
   '!': itprNode => !itprNode.walk(itprNode.node.argument),
   '+': itprNode => +itprNode.walk(itprNode.node.argument),
   '-': itprNode => -itprNode.walk(itprNode.node.argument),
@@ -279,11 +289,33 @@ export const es5: ES5VisitorMap = {
       const { id, init } = decl;
       const key = (id as Identifier).name;
       const value = init ? itprNode.walk(init) : undefined;
-      // 这里好像不对
+      /**
+       * var a = 1;
+       * var a;
+       * a;
+       *
+       * 如果已经有申明，那么init不存在时，不要写。
+       */
       if (scope.type === ScopeType.BLOCK && kind === VariableKind.VAR && scope.parent) {
-        scope.parent.declare(VariableKind.VAR, key, value);
+        const variable = scope.parent.search(key);
+        /**
+         * 首先，var a = 1; 直接就是declaration, 而不是拆成Assignment,所以先检测是否存在，然后在申明；
+         * 已经存在变量，且又申明了，不赋值
+         */
+        if (variable == null || init != null) {
+          scope.parent.declare(VariableKind.VAR, key, value);
+        }
       } else {
         scope.declare(kind as VariableKind, key, value);
+      }
+
+      /**
+       * var a = function() {}
+       * var a = (1, function() {})
+       *  TODO: 注意FunctionExpression
+       */
+      if (init?.type === 'FunctionExpression' || init?.type === 'ArrowFunctionExpression') {
+        updateFuncInfo(value as Function, key);
       }
     });
   },
@@ -298,6 +330,7 @@ export const es5: ES5VisitorMap = {
     const { node: { init, test, update, body } } = itprNode;
     const forScope = new Scope(ScopeType.BLOCK, itprNode.scope);
     let result;
+
     for (
       init && itprNode.walk(init as VariableDeclaration, forScope);
       test ? itprNode.walk(test as Expression, forScope) : true;
