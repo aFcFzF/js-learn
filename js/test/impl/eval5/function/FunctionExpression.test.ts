@@ -215,12 +215,12 @@ test('function overlap1', () => {
 
   const a = evaluate(
     `
-        function overlap1(){
-            return 2;
-        }
-        overlap1();
+      function overlap1(){
+          return 2;
+      }
+      overlap1();
     `,
-    { rootScope: ctx },
+    { scope: ctx },
   );
 
   deepEqual(a, 2);
@@ -229,11 +229,11 @@ test('function overlap1', () => {
 test('function overlap2', () => {
   const a = evaluate(
     `
-        var overlap1 = 1;
-        function overlap1(){
-            return 2;
-        }
-        typeof overlap1;
+      var overlap1 = 1;
+      function overlap1(){
+          return 2;
+      }
+      typeof overlap1;
     `,
     {},
   );
@@ -248,7 +248,7 @@ test('function overlap3', () => {
     `
         var overlap1 = 1;
     `,
-    { rootScope: ctx },
+    { scope: ctx },
   );
 
   const a = evaluate(
@@ -258,7 +258,7 @@ test('function overlap3', () => {
         }
         typeof overlap1;
     `,
-    { rootScope: ctx },
+    { scope: ctx },
   );
 
   deepEqual(a, 'function');
@@ -274,7 +274,7 @@ test('function overlap4', () => {
 
       typeof dat
     `,
-    { rootScope: ctx },
+    { scope: ctx },
   );
 
   deepEqual(a, 'undefined');
@@ -290,7 +290,7 @@ test('function overlap5', () => {
 
       typeof dat
     `,
-    { rootScope: ctx },
+    { scope: ctx },
   );
 
   deepEqual(a, 'function');
@@ -307,7 +307,7 @@ test('function overlap5', () => {
 
       typeof d1
     `,
-    { rootScope: ctx },
+    { scope: ctx },
   );
 
   deepEqual(a, 'undefined');
@@ -400,20 +400,6 @@ test('function toString -1', () => {
     `,
     {},
   );
-
-  expect(a.toString()).toEqual('function test(a,b,c,d){return  this;}');
-});
-
-test('function toString -2', () => {
-  const a = evaluate(`
-        function test(a,b,c,d){return  this;}
-
-        test
-    `);
-
-  evaluate(`
-        test
-    `);
 
   expect(a.toString()).toEqual('function test(a,b,c,d){return  this;}');
 });

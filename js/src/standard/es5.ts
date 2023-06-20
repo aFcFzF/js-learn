@@ -131,25 +131,25 @@ const operateMap: Record<BinaryOperator, (itprNode: Walker<BinaryExpression>) =>
 
 //
 const assignOperator: Record<AssignmentOperator, (lhsRef: PropertyRef | Variable, rshValue: any) => any> = {
-  '%=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() % rhsValue),
-  '+=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() + rhsValue),
-  '-=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() - rhsValue),
-  '*=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() * rhsValue),
-  '/=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() / rhsValue),
-  '=': (lhsRef, rhsValue) => lhsRef.set(rhsValue),
-  '<<=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() << rhsValue),
-  '>>=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() >> rhsValue),
-  '>>>=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() >>> rhsValue),
-  '&&=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() && rhsValue),
+  '%=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() % rhsValue),
+  '+=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() + rhsValue),
+  '-=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() - rhsValue),
+  '*=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() * rhsValue),
+  '/=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() / rhsValue),
+  '=': (lhsRef, rhsValue) => lhsRef.setValue(rhsValue),
+  '<<=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() << rhsValue),
+  '>>=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() >> rhsValue),
+  '>>>=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() >>> rhsValue),
+  '&&=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() && rhsValue),
   // eslint-disable-next-line no-restricted-properties
-  '**=': (lhsRef, rhsValue) => lhsRef.set(Math.pow(lhsRef.get(), rhsValue)),
-  '||=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() || rhsValue),
-  '|=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() | rhsValue),
-  '&=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() & rhsValue),
-  '^=': (lhsRef, rhsValue) => lhsRef.set(lhsRef.get() ^ rhsValue),
+  '**=': (lhsRef, rhsValue) => lhsRef.setValue(Math.pow(lhsRef.getValue(), rhsValue)),
+  '||=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() || rhsValue),
+  '|=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() | rhsValue),
+  '&=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() & rhsValue),
+  '^=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() ^ rhsValue),
   '??=': (lhsRef, rhsValue) => {
-    const lValue = lhsRef.get();
-    return lhsRef.set(lValue == null ? rhsValue : lValue);
+    const lValue = lhsRef.getValue();
+    return lhsRef.setValue(lValue == null ? rhsValue : lValue);
   },
 };
 
@@ -184,7 +184,15 @@ const unaryOperatorMap: Record<UnaryOperator, (itprNode: Walker<UnaryExpression>
       return delete argument.value;
     }
 
-    if (argument.type === 'Identifier' || argument.type === 'MemberExpression') {
+    if (argument.type === 'Identifier') {
+      try {
+        const variable = getVariable(argument, itprNode) as Variable;
+        variable.dispose();
+        return true;
+      } catch (err) {
+        return false;
+      }
+    } else if (argument.type === 'MemberExpression') {
       const { obj, key } = getVariable(argument, itprNode) as PropertyRef;
       return delete obj[key];
     }
@@ -239,7 +247,7 @@ const getVariable = (node: Identifier | MemberExpression, itprNode: Walker<Expre
   return propRef;
 };
 
-// const getVariableValue = (node: Identifier | MemberExpression, itprNode: Walker<Expression>): any => getVariable(node, itprNode).get();
+// const getVariableValue = (node: Identifier | MemberExpression, itprNode: Walker<Expression>): any => getVariable(node, itprNode).getValue();
 
 export const es5: ES5VisitorMap = {
   BinaryExpression(itprNode) {
@@ -268,6 +276,8 @@ export const es5: ES5VisitorMap = {
     return itprNode.walk({
       type: 'BlockStatement',
       body: body as Statement[],
+      start: 0,
+      end: 0,
     });
   },
 
@@ -286,7 +296,7 @@ export const es5: ES5VisitorMap = {
     const { declarations, kind } = node;
 
     declarations.forEach((decl) => {
-      const { id, init } = decl;
+      const { id, init, start, end } = decl;
       const key = (id as Identifier).name;
       const value = init ? itprNode.walk(init) : undefined;
       /**
@@ -315,7 +325,13 @@ export const es5: ES5VisitorMap = {
        *  TODO: 注意FunctionExpression
        */
       if (init?.type === 'FunctionExpression' || init?.type === 'ArrowFunctionExpression') {
-        updateFuncInfo(value as Function, key);
+        updateFuncInfo({
+          fn: value as Function,
+          name: key,
+          sourceCode: itprNode.sourceCode,
+          start,
+          end,
+        });
       }
     });
   },
@@ -323,7 +339,7 @@ export const es5: ES5VisitorMap = {
   Identifier(itprNode) {
     const { node } = itprNode;
     const variable = getVariable(node, itprNode);
-    return variable.get();
+    return variable.getValue();
   },
 
   ForStatement(itprNode) {
@@ -353,7 +369,7 @@ export const es5: ES5VisitorMap = {
   UpdateExpression(itprNode) {
     const { node: { operator, argument, prefix } } = itprNode;
     const variable = getVariable(argument as Identifier, itprNode);
-    const prevVal = variable.get();
+    const prevVal = variable.getValue();
     let afterVal;
     if (operator === '++') {
       afterVal = prevVal + 1;
@@ -363,7 +379,7 @@ export const es5: ES5VisitorMap = {
       throw new Error('unSupport val');
     }
 
-    variable.set(afterVal);
+    variable.setValue(afterVal);
     return prefix ? afterVal : prevVal;
   },
 
@@ -397,11 +413,17 @@ export const es5: ES5VisitorMap = {
         left: {
           type: 'Identifier',
           name: propName,
+          start: 0,
+          end: 0,
         },
         right: {
           type: 'Literal',
           value: prop,
+          start: 0,
+          end: 0,
         },
+        start: 0,
+        end: 0,
       };
       itprNode.walk(assignmentExp, forScope);
 
@@ -480,7 +502,12 @@ export const es5: ES5VisitorMap = {
       if (err instanceof ReferenceError && operator === '=' && left.type === 'Identifier') {
         const rootScope = scope.getRootScope();
         const name = getDefineVariableName(left);
-        leftVariable = new Variable(VariableKind.VAR, undefined);
+        leftVariable = new Variable({
+          kind: VariableKind.VAR,
+          value: undefined,
+          name,
+          scope: rootScope,
+        });
         rootScope.scopeValue[name] = leftVariable;
       } else {
         throw err;
@@ -503,13 +530,12 @@ export const es5: ES5VisitorMap = {
   },
 
   ObjectExpression(itprNode) {
-    const { node: { properties } } = itprNode;
+    const { node: { properties }, sourceCode } = itprNode;
     const obj: Record<string, unknown> = {};
     properties.forEach((prop) => {
       // const obj = {name: 'xxx'}; 都是property
       if (prop.type === 'Property') {
         const { key, value } = prop as Property;
-        const result = itprNode.walk(value);
         let propName: string;
         // TODO: 忘了是啥场景？
         if (key.type === 'Identifier') {
@@ -520,17 +546,38 @@ export const es5: ES5VisitorMap = {
         } else {
           throw new Error(`${key.type} not exist! detail: ${JSON.stringify(key)}`);
         }
-        obj[propName] = result;
 
-        // 函数要更新length和fn名，因为函数node拿不到
-        if (value.type === 'FunctionExpression') {
-          /**
-           * obj = {v: function v3() {}}
-           * 此时，fnName是v3
-           */
-          const fnName = value.id?.name || propName;
-          updateFuncInfo(result, fnName, value.params.length);
+        const descriptor: PropertyDescriptor = {
+          configurable: true,
+          enumerable: true,
+        };
+
+        if (prop.kind === 'get') {
+          descriptor.get = itprNode.walk(value);
+        } else if (prop.kind === 'set') {
+          descriptor.set = itprNode.walk(value);
+        } else {
+          descriptor.value = itprNode.walk(value);
+          descriptor.writable = true;
+          // 函数要更新length和fn名，因为函数node拿不到
+          if (value.type === 'FunctionExpression') {
+            /**
+             * obj = {v: function v3() {}}
+             * 此时，fnName是v3
+             */
+            const fnName = value.id?.name || propName;
+            updateFuncInfo({
+              fn: descriptor.value,
+              name: fnName,
+              length: value.params.length,
+              start: value.start,
+              end: value.end,
+              sourceCode,
+            });
+          }
         }
+
+        Object.defineProperty(obj, propName, descriptor);
       }
     });
     return obj;
@@ -583,7 +630,7 @@ export const es5: ES5VisitorMap = {
     const argsVal = args.map(arg => itprNode.walk(arg));
     // 有可能是fn()或者obj.fn()
     const fn = itprNode.walk(callee as Identifier | MemberExpression, scope);
-    let context;
+    let context = itprNode.globalThis;
     if (callee.type === 'MemberExpression') {
       // obj.fn会是这种类型，所以this会指向object
       context = itprNode.walk(callee.object, scope);
@@ -608,7 +655,7 @@ export const es5: ES5VisitorMap = {
       throw new Error('ThisExpression not valid!');
     }
 
-    return variable.get();
+    return variable.getValue();
   },
 
   // 返回的是实例

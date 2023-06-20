@@ -42,7 +42,12 @@ export class Scope {
     this.type = type;
     this.parent = parent;
     Object.entries(scopeValue).forEach(([key, value]) => {
-      this.scopeValue[key] = new Variable(VariableKind.CONST, value);
+      this.scopeValue[key] = new Variable({
+        kind: VariableKind.VAR,
+        value,
+        name: key,
+        scope: this,
+      });
     });
   }
 
@@ -101,21 +106,42 @@ export class Scope {
     return [VariableKind.CONST, VariableKind.LET].includes(kind) && hasOwnProperty(this.scopeValue, rawName);
   }
 
+  /**
+   * ctx.fn = () => 1
+   * 那么 function fn() { return 2 } 应该覆盖ctx
+   * @param rawName
+   * @param value
+   */
   private defineVar(rawName: string, value: unknown): void {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let scope: Scope = this;
-    while (scope.parent && scope.type !== ScopeType.FUNCTION) {
+    while (scope.parent && scope.type !== ScopeType.FUNCTION && scope.scopeValue[rawName] == null) {
       scope = scope.parent;
     }
 
-    scope.scopeValue[rawName] = new Variable(VariableKind.VAR, value);
+    scope.scopeValue[rawName] = new Variable({
+      kind: VariableKind.VAR,
+      value,
+      name: rawName,
+      scope,
+    });
   }
 
   private defineLet(rawName: string, value: any): void {
-    this.scopeValue[rawName] = new Variable(VariableKind.LET, value);
+    this.scopeValue[rawName] = new Variable({
+      kind: VariableKind.LET,
+      value,
+      name: rawName,
+      scope: this,
+    });
   }
 
   private defineConst(rawName: string, value: any): void {
-    this.scopeValue[rawName] = new Variable(VariableKind.CONST, value);
+    this.scopeValue[rawName] = new Variable({
+      kind: VariableKind.CONST,
+      value,
+      name: rawName,
+      scope: this,
+    });
   }
 }

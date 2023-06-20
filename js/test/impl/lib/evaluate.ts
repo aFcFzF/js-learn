@@ -10,3 +10,7 @@ const ins = new Interpreter();
 export const testEval = (...args: Parameters<Interpreter['evaluate']>): any => ins.evaluate(...args);
 
 export const evaluate = testEval;
+
+export {
+  Interpreter,
+};

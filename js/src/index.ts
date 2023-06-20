@@ -28,7 +28,16 @@ import { Interpreter } from './model/Interpreter';
 // `;
 
 const code = `
-  a = 2;
+function overlap1(){
+	return 2;
+}
+overlap1();
 `;
 
-console.log('result: ', new Interpreter().evaluate(code));
+const ctx: { [x: string]: any } = {};
+ctx.overlap1 = function () {
+	return 1;
+};
+
+const a = new Interpreter().evaluate(code, { scope: ctx });
+console.log('result: ', a);

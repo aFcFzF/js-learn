@@ -40,23 +40,24 @@ export class Interpreter {
     };
   }
 
-  public evaluate = (code: string, option?: InterpreterOption): any => {
+  public evaluate = (code: string, option?: Omit<InterpreterOption, 'rootScope'> & { scope?: InterpreterOption['rootScope'] }): any => {
     const { mode, globalThis: rootGlobalThis, rootScope: rootScopeData } = this.option;
     const ast = parse(code, { ecmaVersion: 2023 }) as ESTree.Node;
 
     const {
       mode: evalMode,
       globalThis: evalGlobalThis,
-      rootScope: evalRootScope,
+      scope: evalScopeData,
     } = option || {};
 
     // 必须每次重新生成，否则实例化之后每次都在同1个作用域
-    const scopeValue = rootScopeValueMap[evalMode || mode];
-    const rootScopeIns = new Scope(ScopeType.BLOCK, null, { ...scopeValue, ...rootScopeData, ...evalRootScope });
-    const rootScope = new Scope(ScopeType.BLOCK, rootScopeIns);
+    const evalModeScopeValue = new Scope(ScopeType.BLOCK, null, rootScopeValueMap[evalMode || mode]);
+    const rootScope = new Scope(ScopeType.BLOCK, evalModeScopeValue, rootScopeData);
+    const scope = new Scope(ScopeType.BLOCK, rootScope, evalScopeData);
     const ins = new Walker({
+      sourceCode: code,
       globalThis: evalGlobalThis || rootGlobalThis,
-      scope: rootScope,
+      scope,
       rootScope,
       node: ast,
       visitorMap: es5,

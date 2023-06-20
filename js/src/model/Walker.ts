@@ -7,12 +7,14 @@ import * as ESTree from 'estree';
 import { ES5NodeType, ES5NodeVisitor, ES5VisitorMap } from '../standard/es5';
 import { Scope } from './Scope';
 
+
 interface WalkOption<T extends ESTree.Node> {
   node: T;
   scope: Scope;
   rootScope: Scope;
   visitorMap: ES5VisitorMap;
   globalThis: unknown;
+  sourceCode: string;
 }
 
 export class Walker<T extends ESTree.Node> {
@@ -24,7 +26,9 @@ export class Walker<T extends ESTree.Node> {
 
   public globalThis: unknown;
 
-  public node: T;
+  public node: WalkOption<T>['node'];
+
+  public sourceCode: WalkOption<T>['sourceCode'];
 
   constructor(option: WalkOption<T>) {
     const {
@@ -33,6 +37,7 @@ export class Walker<T extends ESTree.Node> {
       globalThis,
       visitorMap,
       rootScope,
+      sourceCode,
     } = option;
 
     this.node = node;
@@ -40,6 +45,7 @@ export class Walker<T extends ESTree.Node> {
     this.rootScope = rootScope;
     this.globalThis = globalThis;
     this.visitorMap = visitorMap;
+    this.sourceCode = sourceCode;
   }
 
   public walk(esNode: ESTree.Node, scope?: Scope): any {
@@ -49,6 +55,7 @@ export class Walker<T extends ESTree.Node> {
       visitorMap: this.visitorMap,
       rootScope: this.rootScope,
       globalThis: this.globalThis,
+      sourceCode: this.sourceCode,
     });
 
     if (instance.node.type in this.visitorMap) {
