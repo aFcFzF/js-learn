@@ -3,8 +3,7 @@
  * @author afcfzf(9301462@qq.com)
  */
 
-import { Interpreter, evaluate } from '../../lib/evaluate';
-// import { deepEqual } from '../../lib/test';
+import { Interpreter } from '../../lib/evaluate';
 
 test('rootContext -1', () => {
   const rootContext = { a: 1, b: 1, c: 1 };

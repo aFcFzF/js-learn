@@ -28,10 +28,14 @@ import { Interpreter } from './model/Interpreter';
 // `;
 
 const code = `
-function overlap1(){
-	return 2;
+var a = (get() , 2);
+var b;
+
+function get(){
+  b = 3;
 }
-overlap1();
+
+ d = {a: a, b: b};
 `;
 
 const ctx: { [x: string]: any } = {};

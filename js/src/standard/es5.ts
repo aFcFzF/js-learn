@@ -163,7 +163,7 @@ const logicalOperatorMap: Record<LogicalOperator, (itprNode: Walker<LogicalExpre
 };
 
 const unaryOperatorMap: Record<UnaryOperator, (itprNode: Walker<UnaryExpression>) => any> = {
-  typeof: itprNode => {
+  typeof: (itprNode) => {
     try {
       return typeof itprNode.walk(itprNode.node.argument);
     } catch (err) {
