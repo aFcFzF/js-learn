@@ -6,17 +6,12 @@
 import { globSync } from 'glob';
 import { resolve, parse } from 'path';
 import { readFileSync } from 'fs';
-import { parse as acornParse } from 'acorn';
-import * as ESTree from 'estree';
-import { Scope, ScopeType } from '@/src/model/Scope';
 import { Interpreter } from '@/src/model/Interpreter';
 import chalk from 'chalk';
-import { DEFAULT_ECMA_VERSION } from '../../src/const';
-
 
 class Tester {
   // private static targetPaths = globSync(resolve(__dirname, '../specs/**/*.js'));
-  private static targetPaths = resolve(__dirname, '../262/specs/expressions/**/*.js');
+  private static targetPaths = resolve(__dirname, '../262/specs/expressions/arrow-function/**/*.js');
 
   private static libsPath = resolve(__dirname, './lib/harness/**/*.js');
 
@@ -68,7 +63,12 @@ class Tester {
   }
 
   private evaluate(code: string): void {
-    new Interpreter().evaluate(code);
+    new Interpreter({
+      rootScope: {
+        globalThis: {},
+        Symbol,
+      },
+    }).evaluate(code);
   }
 }
 

@@ -28,20 +28,21 @@ import { Interpreter } from './model/Interpreter';
 // `;
 
 const code = `
-var a = (get() , 2);
-var b;
-
-function get(){
-  b = 3;
+var obj = {
+  a: 10,
+  f1: function(){
+      return this;
+  },
+  f2: function(){
+      return this.a;
+  }
 }
 
- d = {a: a, b: b};
+with(obj) {
+var f = f1;
+[f(),(0,f1)(),f2()]
+}
 `;
 
-const ctx: { [x: string]: any } = {};
-ctx.overlap1 = function () {
-	return 1;
-};
-
-const a = new Interpreter().evaluate(code, { scope: ctx });
+const a = new Interpreter().evaluate(code, { scope: { JSON } });
 console.log('result: ', a);

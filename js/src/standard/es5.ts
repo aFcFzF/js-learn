@@ -22,7 +22,7 @@ import {
   BreakStatement,
   ContinueStatement,
   ReturnStatement,
-  // ArrowFunctionExpression,
+  ArrowFunctionExpression,
   FunctionDeclaration,
   FunctionExpression,
   CallExpression,
@@ -47,6 +47,7 @@ import {
   WhileStatement,
   EmptyStatement,
   Statement,
+  WithStatement,
 } from 'estree';
 import { Walker } from '../model/Walker';
 import { Scope, ScopeType } from '../model/Scope';
@@ -71,7 +72,7 @@ export interface ES5NodeMap {
   BreakStatement: BreakStatement;
   ContinueStatement: ContinueStatement;
   ReturnStatement: ReturnStatement;
-  // ArrowFunctionExpression: ArrowFunctionExpression;
+  ArrowFunctionExpression: ArrowFunctionExpression;
   FunctionDeclaration: FunctionDeclaration;
   CallExpression: CallExpression;
   FunctionExpression: FunctionExpression;
@@ -92,6 +93,7 @@ export interface ES5NodeMap {
   SwitchCase: SwitchCase;
   WhileStatement: WhileStatement;
   EmptyStatement: EmptyStatement;
+  WithStatement: WithStatement;
 };
 
 export type ES5VisitorMap = {
@@ -602,9 +604,9 @@ export const es5: ES5VisitorMap = {
     return new Signal(SignalType.RETURN, value);
   },
 
-  // ArrowFunctionExpression(itprNode) {
-  //   const { node: { body } } = itprNode;
-  // },
+  ArrowFunctionExpression(itprNode) {
+    return createFunction(itprNode);
+  },
 
   /**
    * 核心：运行时再通过闭包定义arguments
@@ -811,6 +813,35 @@ export const es5: ES5VisitorMap = {
         return result.val;
       }
     }
+
+    return result;
+  },
+
+  WithStatement(itprNode) {
+    const { node: { object, body }, scope } = itprNode;
+    const objValue = itprNode.walk(object);
+    const scopeValue: Record<string, any> = {};
+    /**
+     * function o1(){}
+     * o1.prototype.x = 100;
+     * var z = new o1();
+     * for in 遍历可以找出x
+     */
+    // eslint-disable-next-line no-restricted-syntax
+    for (const key in objValue) {
+      scopeValue[key] = objValue[key];
+    }
+    const withScope = new Scope(ScopeType.BLOCK, scope, scopeValue);
+    const result = itprNode.walk(body, withScope);
+
+    // obj = {a, b, c} 枚举出来的所有变量，进行遍历；如果在作用域有值，就更新值；
+    Object.keys(scopeValue).forEach((key) => {
+      const variable = withScope.scopeValue[key];
+      if (variable && objValue[key]) {
+        // objValue 是
+        objValue[key] = variable.getValue();
+      }
+    });
 
     return result;
   },

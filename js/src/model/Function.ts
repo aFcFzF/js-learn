@@ -3,7 +3,11 @@
  * @author afcfzf(9301462@qq.com)
  */
 
-import { FunctionDeclaration, FunctionExpression } from 'estree';
+import {
+  ArrowFunctionExpression,
+  FunctionDeclaration,
+  FunctionExpression,
+} from 'estree';
 import { Walker } from './Walker';
 import { Scope, ScopeType } from './Scope';
 import { VariableKind } from './Variable';
@@ -46,8 +50,16 @@ export const updateFuncInfo = (option: UpdateFuncInfoOption): void => {
   });
 };
 
-export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDeclaration>): Function => {
-  const { node: { params, body, id, start = 0, end = 0 }, scope, sourceCode } = itprNode;
+export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDeclaration | ArrowFunctionExpression>): Function => {
+  const { node, scope, sourceCode } = itprNode;
+  const { params, body, start = 0, end = 0 } = node;
+
+  let fnName: string | undefined;
+  if ('id' in node && node.id) {
+    const { name } = node.id;
+    fnName = name;
+  }
+
   const fn = function (...args: unknown[]): any {
     const fnScope = new Scope(ScopeType.FUNCTION, scope);
 
@@ -68,14 +80,15 @@ export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDec
       argsValue.push(value);
     });
 
-    // 用于内部访问
-    if (id) {
-      const { name } = id;
-      fnScope.declare(VariableKind.VAR, name, fn);
+    // 箭头函数一定无id
+    if (fnName) {
+      fnScope.declare(VariableKind.VAR, fnName, fn);
     }
-
+    // 箭头函数无this，因此箭头函数找this -> fnScope
     // @ts-ignore
-    fnScope.declare(VariableKind.VAR, 'this', this);
+    const context = node.type === 'ArrowFunctionExpression' ? (scope.search('this')?.getValue() || undefined) : this;
+    fnScope.declare(VariableKind.VAR, 'this', context);
+
     if (!argumentsIsDefined) {
       fnScope.declare(VariableKind.VAR, 'arguments', argsValue);
     }
@@ -90,7 +103,7 @@ export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDec
 
   updateFuncInfo({
     fn,
-    name: id?.name,
+    name: fnName,
     length: params.length,
     sourceCode,
     start,

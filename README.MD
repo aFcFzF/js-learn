@@ -6,7 +6,7 @@
 2. 为啥不用开源库
 - 太大，开源库大而全，我们场景仅限于表达式
 - 慢：
-- 兼容性不佳，对esnext语法不能及时跟进
+- 兼容性不佳，eval5只兼容eval5，其实扩展语法尤其是表达式，不需要babel
 3. 如何保证稳定性
 - 基本语法单测
 - 抄作业：ecma262提供了完备的单元测试，粒度精细到每1条规范；eshost: (https://www.npmjs.com/package/eshost) 相当于各种bin -> evaluate
@@ -53,3 +53,4 @@ eval5-test:
 |2023.06.14|22/121|5.50%|修复部分问题|
 |2023.06.19|8/135|94%|修复问题: getter实现; 扫描var(嵌套TODO)|
 |2023.06.20|149/149|100%|修复问题 Variable、context、globalThis、fn.toString|
+|2022.06.20|158/160|98.75%|引入with this问题|
