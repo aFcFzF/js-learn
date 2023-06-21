@@ -654,7 +654,8 @@ export const es5: ES5VisitorMap = {
     const { scope } = itprNode;
     const variable = scope.search('this');
     if (variable == null) {
-      throw new Error('ThisExpression not valid!');
+      return itprNode.globalThis;
+      // throw new Error('ThisExpression not valid!');
     }
 
     return variable.getValue();

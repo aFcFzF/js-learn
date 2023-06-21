@@ -11,9 +11,9 @@ import chalk from 'chalk';
 
 class Tester {
   // private static targetPaths = globSync(resolve(__dirname, '../specs/**/*.js'));
-  private static targetPaths = resolve(__dirname, '../262/specs/expressions/arrow-function/**/*.js');
+  private static targetPaths = resolve(__dirname, '../262/specs/es5/ch07/**/*.js');
 
-  private static libsPath = resolve(__dirname, './lib/harness/**/*.js');
+  private static libsPath = resolve(__dirname, './lib/es5/**/*.js');
 
   private libCode = '';
 
@@ -67,6 +67,13 @@ class Tester {
       rootScope: {
         globalThis: {},
         Symbol,
+        eval,
+        Function,
+        Error,
+        Math,
+        Number,
+        SyntaxError,
+        ReferenceError,
       },
     }).evaluate(code);
   }
