@@ -6,7 +6,7 @@
 import { DEFAULT_INTERPRETER_MODE } from '../const';
 import { es5 } from '../standard/es5';
 import { ModeType } from '../types';
-import { Scope, ScopeType, ScopeData, defaultFullScopeData } from './Scope';
+import { Scope, ScopeType, ScopeData, DEFAULT_INTERNAL_FULL_SCOPE_DATA } from './Scope';
 import { Walker } from './Walker';
 import { parse } from 'acorn';
 import * as ESTree from 'estree';
@@ -17,9 +17,9 @@ export interface InterpreterOption {
   globalThis?: any;
 }
 
-const rootScopeValueMap: Record<Required<InterpreterOption>['mode'], ScopeData> = {
+const internalScopeDataMap: Record<Required<InterpreterOption>['mode'], ScopeData> = {
   expr: {},
-  full: defaultFullScopeData,
+  full: DEFAULT_INTERNAL_FULL_SCOPE_DATA,
   custom: {},
 };
 
@@ -30,7 +30,7 @@ export class Interpreter {
     const {
       mode = DEFAULT_INTERPRETER_MODE,
       globalThis,
-      rootScope = {},
+      rootScope = Object.create(null),
     } = option || {};
 
     this.option = {
@@ -51,14 +51,19 @@ export class Interpreter {
     } = option || {};
 
     // 必须每次重新生成，否则实例化之后每次都在同1个作用域
-    const evalModeScopeValue = new Scope(ScopeType.BLOCK, null, rootScopeValueMap[evalMode || mode]);
-    const rootScope = rootScopeData instanceof Scope ? rootScopeData : new Scope(ScopeType.BLOCK, evalModeScopeValue, rootScopeData);
-    const scope = evalScopeData instanceof Scope ? evalScopeData : new Scope(ScopeType.BLOCK, rootScope, evalScopeData);
+    let scope!: Scope;
+    const descOrderScopeDataList = [internalScopeDataMap[evalMode || mode], rootScopeData, evalScopeData];
+    descOrderScopeDataList.forEach((scopeData) => {
+      if (scopeData) {
+        scope = scopeData instanceof Scope ? scopeData : new Scope(ScopeType.BLOCK, scope, scopeData);
+      }
+    });
+
     const ins = new Walker({
       sourceCode: code,
       globalThis: evalGlobalThis || rootGlobalThis,
       scope,
-      rootScope,
+      rootScope: scope,
       node: ast,
       visitorMap: es5,
     });

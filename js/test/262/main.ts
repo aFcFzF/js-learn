@@ -12,7 +12,7 @@ import chalk from 'chalk';
 class Tester {
   // /Volumes/code/personal/languageStudy/js/test/262/specs/es5/ch07/7.8/7.8.3
   // private static targetPaths = globSync(resolve(__dirname, '../specs/**/*.js'));
-  private static targetPaths = resolve(__dirname, '../262/specs/es5/ch07/7.8/7.8.3/**/*.js');
+  private static targetPaths = resolve(__dirname, '../262/specs/es5/ch08/**/*.js');
 
   private static libsPath = resolve(__dirname, './lib/es5/**/*.js');
 
@@ -75,6 +75,10 @@ class Tester {
         Number,
         SyntaxError,
         ReferenceError,
+        Boolean,
+        String,
+        isNaN,
+        Infinity,
       },
     }).evaluate(code);
   }

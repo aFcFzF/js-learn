@@ -8,7 +8,7 @@ import { hasOwnProperty } from '../utils';
 
 export type ScopeData = Record<string, any>;
 
-export const defaultFullScopeData: ScopeData = {
+export const DEFAULT_INTERNAL_FULL_SCOPE_DATA: ScopeData = {
   console,
   undefined,
   ReferenceError,
