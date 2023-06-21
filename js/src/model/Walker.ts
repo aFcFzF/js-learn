@@ -5,7 +5,8 @@
 
 import * as ESTree from 'estree';
 import { ES5NodeType, ES5NodeVisitor, ES5VisitorMap } from '../standard/es5';
-import { Scope } from './Scope';
+import { Scope, ScopeData } from './Scope';
+import { Variable, VariableKind } from './Variable';
 
 
 interface WalkOption<T extends ESTree.Node> {
@@ -68,5 +69,16 @@ export class Walker<T extends ESTree.Node> {
 
   public evaluate(): any {
     return this.walk(this.node);
+  }
+
+  public addScopeData(scopeData: ScopeData): void {
+    Object.entries(scopeData).forEach(([name, value]) => {
+      this.scope.scopeValue[name] = new Variable({
+        value,
+        scope: this.scope,
+        name,
+        kind: VariableKind.VAR,
+      });
+    });
   }
 }

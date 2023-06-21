@@ -13,7 +13,7 @@ import * as ESTree from 'estree';
 
 export interface InterpreterOption {
   mode?: ModeType;
-  rootScope?: Record<string, any>;
+  rootScope?: Record<string, any> | Scope;
   globalThis?: any;
 }
 
@@ -52,8 +52,8 @@ export class Interpreter {
 
     // 必须每次重新生成，否则实例化之后每次都在同1个作用域
     const evalModeScopeValue = new Scope(ScopeType.BLOCK, null, rootScopeValueMap[evalMode || mode]);
-    const rootScope = new Scope(ScopeType.BLOCK, evalModeScopeValue, rootScopeData);
-    const scope = new Scope(ScopeType.BLOCK, rootScope, evalScopeData);
+    const rootScope = rootScopeData instanceof Scope ? rootScopeData : new Scope(ScopeType.BLOCK, evalModeScopeValue, rootScopeData);
+    const scope = evalScopeData instanceof Scope ? evalScopeData : new Scope(ScopeType.BLOCK, rootScope, evalScopeData);
     const ins = new Walker({
       sourceCode: code,
       globalThis: evalGlobalThis || rootGlobalThis,
@@ -61,6 +61,10 @@ export class Interpreter {
       rootScope,
       node: ast,
       visitorMap: es5,
+    });
+
+    ins.addScopeData({
+      eval: (code: string) => this.evaluate(code, { scope, globalThis: evalGlobalThis, mode }),
     });
 
     const result = ins.evaluate();
