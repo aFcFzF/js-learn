@@ -4,3 +4,6 @@
  */
 
 export type ModeType = 'expr' | 'full' | 'custom';
+
+export type ScopeValueNotExist = 'SCOPE_VALUE_NOT_EXIST';
+

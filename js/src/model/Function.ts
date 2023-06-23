@@ -10,7 +10,7 @@ import {
 } from 'estree';
 import { Walker } from './Walker';
 import { Scope, ScopeType } from './Scope';
-import { VariableKind } from './Variable';
+import { ValueDetailKind } from './ValueDetail';
 import { Signal } from './Signal';
 
 interface UpdateFuncInfoOption {
@@ -76,21 +76,21 @@ export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDec
 
       // fn运行时，再定义
       const value = args[idx];
-      fnScope.declare(VariableKind.VAR, param.name, args[idx]);
+      fnScope.declare(ValueDetailKind.VAR, param.name, args[idx]);
       argsValue.push(value);
     });
 
     // 箭头函数一定无id
     if (fnName) {
-      fnScope.declare(VariableKind.VAR, fnName, fn);
+      fnScope.declare(ValueDetailKind.VAR, fnName, fn);
     }
     // 箭头函数无this，因此箭头函数找this -> fnScope
     // @ts-ignore
     const context = node.type === 'ArrowFunctionExpression' ? (scope.search('this')?.getValue() || undefined) : this;
-    fnScope.declare(VariableKind.VAR, 'this', context);
+    fnScope.declare(ValueDetailKind.VAR, 'this', context);
 
     if (!argumentsIsDefined) {
-      fnScope.declare(VariableKind.VAR, 'arguments', argsValue);
+      fnScope.declare(ValueDetailKind.VAR, 'arguments', argsValue);
     }
 
     const result = itprNode.walk(body, fnScope);

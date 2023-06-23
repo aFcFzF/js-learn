@@ -51,10 +51,12 @@ import {
 } from 'estree';
 import { Walker } from '../model/Walker';
 import { Scope, ScopeType } from '../model/Scope';
-import { PropertyRef, Variable, VariableKind } from '../model/Variable';
+import { ValueDetail, ValueDetailKind } from '../model/ValueDetail';
 import { Signal, SignalType } from '../model/Signal';
 import { createFunction, updateFuncInfo } from '../model/Function';
 import { getHostingStatements } from '../utils';
+import { SCOPE_VALUE_NOT_EXIST } from '../const';
+import { ValueRef } from '../model/ValueRef';
 
 export interface ES5NodeMap {
   BinaryExpression: BinaryExpression;
@@ -132,7 +134,7 @@ const operateMap: Record<BinaryOperator, (itprNode: Walker<BinaryExpression>) =>
 };
 
 //
-const assignOperator: Record<AssignmentOperator, (lhsRef: PropertyRef | Variable, rshValue: any) => any> = {
+const assignOperator: Record<AssignmentOperator, (lhsRef: ValueRef, rshValue: any) => any> = {
   '%=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() % rhsValue),
   '+=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() + rhsValue),
   '-=': (lhsRef, rhsValue) => lhsRef.setValue(lhsRef.getValue() - rhsValue),
@@ -186,17 +188,11 @@ const unaryOperatorMap: Record<UnaryOperator, (itprNode: Walker<UnaryExpression>
       return delete argument.value;
     }
 
-    if (argument.type === 'Identifier') {
-      try {
-        const variable = getVariable(argument, itprNode) as Variable;
-        variable.dispose();
-        return true;
-      } catch (err) {
-        return false;
-      }
-    } else if (argument.type === 'MemberExpression') {
-      const { obj, key } = getVariable(argument, itprNode) as PropertyRef;
-      return delete obj[key];
+    if (argument.type === 'Identifier' || argument.type === 'MemberExpression') {
+      const valRef = getValueRef(argument, itprNode);
+      const container = valRef.getContainer();
+      const name = valRef.getName();
+      return delete container[name];
     }
 
     throw new Error('unSupport delete operation!');
@@ -219,17 +215,17 @@ const getDefineVariableName = (node: Identifier | MemberExpression): string => {
  * @param itprNode
  * @returns
  */
-const getVariable = (node: Identifier | MemberExpression, itprNode: Walker<Expression>): Variable | PropertyRef => {
+const getValueRef = (node: Identifier | MemberExpression, itprNode: Walker<Expression>): ValueRef => {
   const { scope } = itprNode;
 
   if (node.type === 'Identifier') {
     const { name } = node;
-    const variable = scope.search(name);
-    if (!variable) {
+    const { value, scope: valueScope } = scope.search(name);
+    if (value === SCOPE_VALUE_NOT_EXIST) {
       throw new ReferenceError(`name is not find: ${name}`);
     }
 
-    return variable;
+    return new ValueRef(valueScope.getScopeValue(), name);
   }
 
   const { object, property, computed } = node;
@@ -245,11 +241,9 @@ const getVariable = (node: Identifier | MemberExpression, itprNode: Walker<Expre
     throw new Error(`unSupport variable type: ${JSON.stringify(property)}`);
   }
 
-  const propRef = new PropertyRef(obj, propName);
+  const propRef = new ValueRef(obj, propName);
   return propRef;
 };
-
-// const getVariableValue = (node: Identifier | MemberExpression, itprNode: Walker<Expression>): any => getVariable(node, itprNode).getValue();
 
 export const es5: ES5VisitorMap = {
   BinaryExpression(itprNode) {
@@ -308,17 +302,17 @@ export const es5: ES5VisitorMap = {
        *
        * 如果已经有申明，那么init不存在时，不要写。
        */
-      if (scope.type === ScopeType.BLOCK && kind === VariableKind.VAR && scope.parent) {
+      if (scope.type === ScopeType.BLOCK && kind === ValueDetailKind.VAR && scope.parent) {
         const variable = scope.parent.search(key);
         /**
          * 首先，var a = 1; 直接就是declaration, 而不是拆成Assignment,所以先检测是否存在，然后在申明；
          * 已经存在变量，且又申明了，不赋值
          */
         if (variable == null || init != null) {
-          scope.parent.declare(VariableKind.VAR, key, value);
+          scope.parent.declare(ValueDetailKind.VAR, key, value);
         }
       } else {
-        scope.declare(kind as VariableKind, key, value);
+        scope.declare(kind as ValueDetailKind, key, value);
       }
 
       /**
@@ -340,8 +334,8 @@ export const es5: ES5VisitorMap = {
 
   Identifier(itprNode) {
     const { node } = itprNode;
-    const variable = getVariable(node, itprNode);
-    return variable.getValue();
+    const valRef = getValueRef(node, itprNode);
+    return valRef.getValue();
   },
 
   ForStatement(itprNode) {
@@ -370,8 +364,8 @@ export const es5: ES5VisitorMap = {
 
   UpdateExpression(itprNode) {
     const { node: { operator, argument, prefix } } = itprNode;
-    const variable = getVariable(argument as Identifier, itprNode);
-    const prevVal = variable.getValue();
+    const valRef = getValueRef(argument as Identifier, itprNode);
+    const prevVal = valRef.getValue();
     let afterVal;
     if (operator === '++') {
       afterVal = prevVal + 1;
@@ -381,7 +375,7 @@ export const es5: ES5VisitorMap = {
       throw new Error('unSupport val');
     }
 
-    variable.setValue(afterVal);
+    valRef.setValue(afterVal);
     return prefix ? afterVal : prevVal;
   },
 
@@ -397,7 +391,7 @@ export const es5: ES5VisitorMap = {
       const { kind, declarations } = left;
       const { name: identifierName } = declarations[0].id as Identifier;
       propName = identifierName;
-      forScope.declare(kind as VariableKind, propName, null);
+      forScope.declare(kind as ValueDetailKind, propName, null);
     } else if (left.type === 'Identifier') {
       propName = left.name;
     } else {
@@ -498,19 +492,19 @@ export const es5: ES5VisitorMap = {
     // lsh找Variable: 值的容器
     let leftVariable;
     try {
-      leftVariable = getVariable(left as Identifier | MemberExpression, itprNode);
+      leftVariable = getValueRef(left as Identifier | MemberExpression, itprNode);
     } catch (err) {
       // 变量说明不存在；创建一个
       if (err instanceof ReferenceError && operator === '=' && left.type === 'Identifier') {
         const rootScope = scope.getRootScope();
         const name = getDefineVariableName(left);
-        leftVariable = new Variable({
-          kind: VariableKind.VAR,
+        leftVariable = new ValueDetail({
+          kind: ValueDetailKind.VAR,
           value: undefined,
           name,
           scope: rootScope,
         });
-        rootScope.scopeValue[name] = leftVariable;
+        rootScope.setValue(name, leftVariable);
       } else {
         throw err;
       }
@@ -623,7 +617,7 @@ export const es5: ES5VisitorMap = {
     }
 
     const fn = createFunction(itprNode);
-    scope.declare(VariableKind.VAR, fnName, fn);
+    scope.declare(ValueDetailKind.VAR, fnName, fn);
   },
 
   CallExpression(itprNode) {
@@ -712,7 +706,7 @@ export const es5: ES5VisitorMap = {
     const { node: { param, body }, scope } = itprNode;
     return (err: any) => {
       const { name } = (param as Identifier);
-      scope.declare(VariableKind.VAR, name, err);
+      scope.declare(ValueDetailKind.VAR, name, err);
       return itprNode.walk(body);
     };
   },
