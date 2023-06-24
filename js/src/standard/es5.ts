@@ -50,12 +50,11 @@ import {
   WithStatement,
 } from 'estree';
 import { Walker } from '../model/Walker';
-import { Scope, ScopeType } from '../model/Scope';
-import { ValueDetail, ValueDetailKind } from '../model/ValueDetail';
+import { Scope, ScopeType, ScopeValueRef } from '../model/Scope';
+import { ValueDetailKind } from '../model/ValueDetail';
 import { Signal, SignalType } from '../model/Signal';
 import { createFunction, updateFuncInfo } from '../model/Function';
-import { getHostingStatements } from '../utils';
-import { SCOPE_VALUE_NOT_EXIST } from '../const';
+import { getHostingStatements, hasOwnProperty } from '../utils';
 import { ValueRef } from '../model/ValueRef';
 
 export interface ES5NodeMap {
@@ -188,47 +187,38 @@ const unaryOperatorMap: Record<UnaryOperator, (itprNode: Walker<UnaryExpression>
       return delete argument.value;
     }
 
-    if (argument.type === 'Identifier' || argument.type === 'MemberExpression') {
-      const valRef = getValueRef(argument, itprNode);
-      const container = valRef.getContainer();
-      const name = valRef.getName();
-      return delete container[name];
+    let valueRef: ValueRef;
+    if (argument.type === 'Identifier') {
+      valueRef = getScopeValueRef(argument, itprNode);
+    } else if (argument.type === 'MemberExpression') {
+      valueRef = getMemberValueRef(argument, itprNode);
+    } else {
+      throw new Error(`unSupported delete type: ${argument.type}`);
     }
 
-    throw new Error('unSupport delete operation!');
+    const container = valueRef.getContainer();
+    const name = valueRef.getName();
+    return delete container[name];
   },
   void: itprNode => void itprNode.walk(itprNode.node.argument),
 };
 
-const getDefineVariableName = (node: Identifier | MemberExpression): string => {
-  if (node.type === 'Identifier') {
-    return node.name;
-  }
-
-  const { object } = node;
-  return getDefineVariableName(object as Identifier | MemberExpression);
-};
-
 /**
  * 分为两种节点：1. identifier、MemberExpression
+ * 如何用: const result = 'this.a';
  * @param node
  * @param itprNode
  * @returns
  */
-const getValueRef = (node: Identifier | MemberExpression, itprNode: Walker<Expression>): ValueRef => {
+const getScopeValueRef = (node: Identifier, itprNode: Walker<Expression>): ScopeValueRef => {
   const { scope } = itprNode;
+  const { name } = node;
+  return scope.search(name);
+};
 
-  if (node.type === 'Identifier') {
-    const { name } = node;
-    const { value, scope: valueScope } = scope.search(name);
-    if (value === SCOPE_VALUE_NOT_EXIST) {
-      throw new ReferenceError(`name is not find: ${name}`);
-    }
-
-    return new ValueRef(valueScope.getScopeValue(), name);
-  }
-
+const getMemberValueRef = (node: MemberExpression, itprNode: Walker<Expression>): ValueRef => {
   const { object, property, computed } = node;
+
   const obj = itprNode.walk(object);
   let propName;
   if (computed) {
@@ -303,13 +293,22 @@ export const es5: ES5VisitorMap = {
        * 如果已经有申明，那么init不存在时，不要写。
        */
       if (scope.type === ScopeType.BLOCK && kind === ValueDetailKind.VAR && scope.parent) {
-        const variable = scope.parent.search(key);
+        const searchResult = scope.parent.search(key);
+        let targetScope: Scope = searchResult.getScope();
+        try {
+          searchResult.getValue();
+        } catch (err) {
+          // 如果不存在
+          if (err instanceof ReferenceError) {
+            targetScope = searchResult.getScope().getRootScope();
+          }
+        }
         /**
          * 首先，var a = 1; 直接就是declaration, 而不是拆成Assignment,所以先检测是否存在，然后在申明；
          * 已经存在变量，且又申明了，不赋值
          */
-        if (variable == null || init != null) {
-          scope.parent.declare(ValueDetailKind.VAR, key, value);
+        if (init != null) {
+          targetScope.declare(ValueDetailKind.VAR, key, value);
         }
       } else {
         scope.declare(kind as ValueDetailKind, key, value);
@@ -332,10 +331,11 @@ export const es5: ES5VisitorMap = {
     });
   },
 
+  // 走到这步，一定是判断过属性不存在，否则实现有问题
   Identifier(itprNode) {
     const { node } = itprNode;
-    const valRef = getValueRef(node, itprNode);
-    return valRef.getValue();
+    const scopeValueRef = getScopeValueRef(node, itprNode);
+    return scopeValueRef.getValue();
   },
 
   ForStatement(itprNode) {
@@ -364,8 +364,16 @@ export const es5: ES5VisitorMap = {
 
   UpdateExpression(itprNode) {
     const { node: { operator, argument, prefix } } = itprNode;
-    const valRef = getValueRef(argument as Identifier, itprNode);
-    const prevVal = valRef.getValue();
+    let valueRef;
+    if (argument.type === 'Identifier') {
+      valueRef = getScopeValueRef(argument, itprNode);
+    } else if (argument.type === 'MemberExpression') {
+      valueRef = getMemberValueRef(argument, itprNode);
+    } else {
+      throw new Error(`unSupport type ${JSON.stringify(argument)}`);
+    }
+
+    const prevVal = valueRef.getValue();
     let afterVal;
     if (operator === '++') {
       afterVal = prevVal + 1;
@@ -375,7 +383,7 @@ export const es5: ES5VisitorMap = {
       throw new Error('unSupport val');
     }
 
-    valRef.setValue(afterVal);
+    valueRef.setValue(afterVal);
     return prefix ? afterVal : prevVal;
   },
 
@@ -488,31 +496,33 @@ export const es5: ES5VisitorMap = {
   },
 
   AssignmentExpression(itprNode) {
-    const { node: { left, right, operator }, scope } = itprNode;
+    const { node: { left, right, operator } } = itprNode;
     // lsh找Variable: 值的容器
-    let leftVariable;
-    try {
-      leftVariable = getValueRef(left as Identifier | MemberExpression, itprNode);
-    } catch (err) {
-      // 变量说明不存在；创建一个
-      if (err instanceof ReferenceError && operator === '=' && left.type === 'Identifier') {
-        const rootScope = scope.getRootScope();
-        const name = getDefineVariableName(left);
-        leftVariable = new ValueDetail({
-          kind: ValueDetailKind.VAR,
-          value: undefined,
-          name,
-          scope: rootScope,
-        });
-        rootScope.setValue(name, leftVariable);
-      } else {
-        throw err;
+    let leftValRef: ValueRef;
+    if (left.type === 'Identifier') {
+      const scopeValueRef = getScopeValueRef(left, itprNode);
+      const name = scopeValueRef.getName();
+      try {
+        scopeValueRef.getValue();
+        leftValRef = scopeValueRef;
+      } catch (err) {
+        if (err instanceof ReferenceError && operator === '=' && left.type === 'Identifier') {
+          const rootScope = scopeValueRef.getScope().getRootScope();
+          rootScope.declare(ValueDetailKind.VAR, name, undefined);
+          leftValRef = new ValueRef(rootScope.getScopeValue(), name);
+        } else {
+          throw err;
+        }
       }
+    } else if (left.type === 'MemberExpression') {
+      leftValRef = getMemberValueRef(left, itprNode);
+    } else {
+      throw new Error(`unSupport left type: ${left.type}`);
     }
 
     // rhs直接赋值，例如const a = 111; 是identifier；否则是MemberExpression: const a = this.b;
     const rightValue = itprNode.walk(right);
-    return assignOperator[operator](leftVariable, rightValue);
+    return assignOperator[operator](leftValRef, rightValue);
   },
 
   MemberExpression(itprNode) {
@@ -646,13 +656,16 @@ export const es5: ES5VisitorMap = {
 
   ThisExpression(itprNode) {
     const { scope } = itprNode;
-    const variable = scope.search('this');
-    if (variable == null) {
-      return itprNode.globalThis;
-      // throw new Error('ThisExpression not valid!');
-    }
+    const searchResult = scope.search('this');
+    try {
+      return searchResult.getValue();
+    } catch (err) {
+      if (err instanceof ReferenceError) {
+        return itprNode.globalThis;
+      }
 
-    return variable.getValue();
+      throw err;
+    }
   },
 
   // 返回的是实例
@@ -831,10 +844,10 @@ export const es5: ES5VisitorMap = {
 
     // obj = {a, b, c} 枚举出来的所有变量，进行遍历；如果在作用域有值，就更新值；
     Object.keys(scopeValue).forEach((key) => {
-      const variable = withScope.scopeValue[key];
-      if (variable && objValue[key]) {
+      const scopeValue = withScope.getScopeValue();
+      if (hasOwnProperty(scopeValue, key) && objValue[key]) {
         // objValue 是
-        objValue[key] = variable.getValue();
+        objValue[key] = scopeValue[key];
       }
     });
 

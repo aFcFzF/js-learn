@@ -51,7 +51,7 @@ export const updateFuncInfo = (option: UpdateFuncInfoOption): void => {
 };
 
 export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDeclaration | ArrowFunctionExpression>): Function => {
-  const { node, scope, sourceCode } = itprNode;
+  const { node, scope, sourceCode, globalThis } = itprNode;
   const { params, body, start = 0, end = 0 } = node;
 
   let fnName: string | undefined;
@@ -86,7 +86,19 @@ export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDec
     }
     // 箭头函数无this，因此箭头函数找this -> fnScope
     // @ts-ignore
-    const context = node.type === 'ArrowFunctionExpression' ? (scope.search('this')?.getValue() || undefined) : this;
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let context = this;
+    if (node.type === 'ArrowFunctionExpression') {
+      const scopeValueRef = scope.search('this');
+      try {
+        context = scopeValueRef.getValue();
+      } catch (err) {
+        if (err instanceof ReferenceError) {
+          context = globalThis;
+        }
+      }
+    }
+
     fnScope.declare(ValueDetailKind.VAR, 'this', context);
 
     if (!argumentsIsDefined) {

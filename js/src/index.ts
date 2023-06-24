@@ -6,9 +6,10 @@
 import { Interpreter } from './model/Interpreter';
 
 const code = `
-name = 1;
-this.name === 1;
+var name = "hello"
+name = "world"
 `;
 
-const a = new Interpreter().evaluate(code, { scope: { JSON, Function, Error, Math, Number } });
+// const a = new Interpreter().evaluate(code, { scope: { JSON, Function, Error, Math, Number } });
+const a = new Interpreter().evaluate(code);
 console.log('result: ', a);

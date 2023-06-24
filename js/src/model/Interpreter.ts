@@ -6,18 +6,18 @@
 import { DEFAULT_INTERPRETER_MODE } from '../const';
 import { es5 } from '../standard/es5';
 import { ModeType } from '../types';
-import { Scope, ScopeType, ScopeData, DEFAULT_INTERNAL_FULL_SCOPE_DATA } from './Scope';
+import { Scope, ScopeType, DEFAULT_INTERNAL_FULL_SCOPE_DATA, ScopeValue } from './Scope';
 import { Walker } from './Walker';
 import { parse } from 'acorn';
 import * as ESTree from 'estree';
 
 export interface InterpreterOption {
   mode?: ModeType;
-  rootScope?: Record<string, any> | Scope;
+  rootScope?: Record<string, any>;
   globalThis?: any;
 }
 
-const internalScopeDataMap: Record<Required<InterpreterOption>['mode'], ScopeData> = {
+const internalScopeValueMap: Record<Required<InterpreterOption>['mode'], ScopeValue> = {
   expr: {},
   full: DEFAULT_INTERNAL_FULL_SCOPE_DATA,
   custom: {},
@@ -40,35 +40,35 @@ export class Interpreter {
     };
   }
 
-  public evaluate = (code: string, option?: Omit<InterpreterOption, 'rootScope'> & { scope?: InterpreterOption['rootScope'] }): any => {
-    const { mode, globalThis: rootGlobalThis, rootScope: rootScopeData } = this.option;
+  public evaluate = (code: string, option?: Omit<InterpreterOption, 'rootScope'> & { scope?: InterpreterOption['rootScope'] | Scope }): any => {
+    const { mode, globalThis: rootGlobalThis, rootScope: rootScopeValue } = this.option;
     const ast = parse(code, { ecmaVersion: 2023 }) as ESTree.Node;
 
     const {
       mode: evalMode,
       globalThis: evalGlobalThis,
-      scope: evalScopeData,
+      scope: evalScopeValue,
     } = option || {};
 
-    // 必须每次重新生成，否则实例化之后每次都在同1个作用域
-    let scope!: Scope;
-    const descOrderScopeDataList = [internalScopeDataMap[evalMode || mode], rootScopeData, evalScopeData];
-    descOrderScopeDataList.forEach((scopeData) => {
-      if (scopeData) {
-        scope = scopeData instanceof Scope ? scopeData : new Scope(ScopeType.BLOCK, scope, scopeData);
-      }
-    });
+    let scope: Scope;
+    if (evalScopeValue instanceof Scope) {
+      scope = evalScopeValue;
+    } else {
+      // 如果eval设置了scope，就将rootScope合并至scope，否则以rootScope作为scope
+      const scopeValue = evalScopeValue ? Object.assign(evalScopeValue, rootScopeValue) : rootScopeValue;
+      scope = new Scope(ScopeType.BLOCK, null, Object.assign(scopeValue, internalScopeValueMap[evalMode || mode]));
+    }
 
     const ins = new Walker({
       sourceCode: code,
-      globalThis: evalGlobalThis || rootGlobalThis,
+      globalThis: evalGlobalThis || rootGlobalThis || scope.getScopeValue(),
       scope,
       rootScope: scope,
       node: ast,
       visitorMap: es5,
     });
 
-    ins.addScopeData({
+    ins.addScopeValue({
       eval: (code: string) => this.evaluate(code, { scope, globalThis: evalGlobalThis, mode }),
     });
 

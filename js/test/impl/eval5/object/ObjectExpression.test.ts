@@ -83,24 +83,24 @@ var obj = {
 
 test('object with setter method -2', () => {
   const r = evaluate(`
-var obj = {
-    getCounter: 0,
-  i: 0,
-  get value(){
-    this.getCounter++;
-    return this.i
-  },
-  set value(val){
-    this.i = val;
-  }
-};
+  var obj = {
+    counter: 0,
+    i: 0,
+    get value(){
+      this.counter++;
+      return this.i
+    },
+    set value(val){
+      this.i = val;
+    }
+  };
 
- obj;
- var result = [obj.i];
- obj.value = 123;
- result.push(obj.i);
- result.push(obj.getCounter);
- result
+   obj;
+   var result = [obj.i];
+   obj.value = 123;
+   result.push(obj.i);
+   result.push(obj.counter);
+   result
   `);
 
   expect(r).toEqual([0, 123, 0]);

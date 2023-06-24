@@ -15,22 +15,27 @@ describe('变量定义', () => {
     expect(result).toBe(1);
   });
 
-  // it('定义对象', () => {
-  //   const code = `
-  //     const obj = { name: 'mark', age: 20 };
-  //     obj.company = {
-  //       leader: {
-  //         boss: 'pony',
-  //       },
-  //     };
-  //     obj.company.leader.boss;
-  //   `;
+  it('定义对象', () => {
+    const code = `
+      const obj = { name: 'mark', age: 20 };
+      obj.company = {
+        leader: {
+          boss: 'pony',
+        },
+      };
+      obj.company.leader.boss;
+    `;
 
-  //   expect(testEval(code)).toBe('pony');
-  // });
+    expect(testEval(code)).toBe('pony');
+  });
 
-  // it('防止重写const', () => {
-  //   const result = (): void => testEval('const a = 1; a = 2;');
-  //   expect(result).toThrow(TypeError);
-  // });
+  it('防止重写const', () => {
+    const result = (): void => testEval('const a = 1; a = 2;');
+    expect(result).toThrow(TypeError);
+  });
+
+  it('读取未定义值:报错', () => {
+    const tryCode = (): void => testEval('a++');
+    expect(tryCode).toThrowError(ReferenceError);
+  });
 });

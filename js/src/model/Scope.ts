@@ -5,8 +5,7 @@
 
 import { ValueDetail, ValueDetailKind } from './ValueDetail';
 import { hasOwnProperty } from '../utils';
-import { ScopeValueNotExist } from '../types';
-import { SCOPE_VALUE_NOT_EXIST } from '../const';
+import { ValueContainer, ValueRef } from './ValueRef';
 
 export type ScopeValue = Record<string, unknown>;
 export type ScopeDetail = Record<string, ValueDetail>;
@@ -19,6 +18,7 @@ export const DEFAULT_INTERNAL_FULL_SCOPE_DATA: ScopeValue = {
   Date,
   RegExp,
   Object,
+  Number,
 };
 
 export enum ScopeType {
@@ -28,10 +28,36 @@ export enum ScopeType {
 
 export interface ScopeSearchResult {
   scope: Scope;
-  name: string;
-  value: any | ScopeValueNotExist;
+  valueRef: ValueRef;
 }
 
+interface ScopeValueRefOption {
+  container: ValueContainer;
+  name: string;
+  scope: Scope;
+}
+
+export class ScopeValueRef extends ValueRef {
+  private scope: Scope;
+
+  constructor(option: ScopeValueRefOption) {
+    const { container, name, scope } = option;
+    super(container, name);
+    this.scope = scope;
+  }
+
+  public setValue(val: any): void {
+    const scopeDetail = this.scope.getScopeDetail();
+    if (scopeDetail[this.getName()]?.getKind() === ValueDetailKind.CONST) {
+      throw new TypeError('Assignment to constant variable.');
+    }
+    return super.setValue(val);
+  }
+
+  public getScope(): Scope {
+    return this.scope;
+  }
+}
 
 export class Scope {
   public type: ScopeType;
@@ -71,19 +97,21 @@ export class Scope {
   /**
    * 这里setValue是给当前scope赋值；
    * 原因：不清楚是给block/function/root作用域赋值，调用该方法时, 只给current赋值；其他作用域需要自行判断
+   * 注意；如果detail不存在，说明应该用declare申明而不是重新赋值;
    * @param val
    */
-  public setValue(name: string, value: unknown): void {
+  public setValue(name: string, value: unknown): any {
     const valueDetail = this.scopeDetail[name];
     if (valueDetail == null) {
       throw new Error(`value detail not exist, name is ${name}`);
     }
 
-    this.scopeValue[name] = value;
+    return this.scopeValue[name] = value;
   }
 
   public deleteScopeValue(name: string): void {
-    const { scope } = this.search(name);
+    const valueRef = this.search(name);
+    const scope = valueRef.getScope();
     delete scope.scopeValue[name];
     delete scope.scopeDetail[name];
   }
@@ -97,27 +125,24 @@ export class Scope {
    * @param rawName
    * @returns
    */
-  public search(rawName: string): ScopeSearchResult {
-    const resultCommon: Pick<ScopeSearchResult, 'name' | 'scope'> = {
-      name: rawName,
-      scope: this,
-    };
-
+  public search(rawName: string): ScopeValueRef {
     if (hasOwnProperty(this.scopeValue, rawName)) {
-      return {
-        ...resultCommon,
-        value: this.scopeValue[rawName],
-      };
+      return new ScopeValueRef({
+        container: this.scopeValue,
+        name: rawName,
+        scope: this,
+      });
     }
 
     if (this.parent) {
       return this.parent.search(rawName);
     }
 
-    return {
-      ...resultCommon,
-      value: SCOPE_VALUE_NOT_EXIST,
-    };
+    return new ScopeValueRef({
+      container: this.scopeValue,
+      name: rawName,
+      scope: this,
+    });
   }
 
   /**
@@ -135,8 +160,8 @@ export class Scope {
 
   public declare(kind: ValueDetailKind, rawName: string, value: any): void {
     if (this.checkDefinition(kind, rawName)) {
-      console.error(`Uncaught SyntaxError: Identifier '${rawName}' has already been declared`);
-      return;
+      const errMsg = `Uncaught SyntaxError: Identifier '${rawName}' has already been declared`;
+      throw new SyntaxError(errMsg);
     }
 
     switch (kind) {

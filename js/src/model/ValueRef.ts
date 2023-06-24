@@ -3,6 +3,8 @@
  * @author afcfzf(9301462@qq.com)
  */
 
+import { hasOwnProperty } from '../utils';
+
 export type ValueContainer = Record<string, any>;
 
 /**
@@ -12,6 +14,10 @@ export class ValueRef {
   constructor(private container: ValueContainer, private name: string) {}
 
   public getValue(): any {
+    if (!hasOwnProperty(this.container, this.name)) {
+      throw new ReferenceError(`name is not find: ${this.name}`);
+    }
+
     return this.container[this.name];
   }
 
