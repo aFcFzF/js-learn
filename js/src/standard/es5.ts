@@ -189,6 +189,7 @@ const unaryOperatorMap: Record<UnaryOperator, (itprNode: Walker<UnaryExpression>
 
     let valueRef: ValueRef;
     if (argument.type === 'Identifier') {
+      // TODO: const a = 1; delete a; 会成功吗
       valueRef = getScopeValueRef(argument, itprNode);
     } else if (argument.type === 'MemberExpression') {
       valueRef = getMemberValueRef(argument, itprNode);
@@ -285,30 +286,24 @@ export const es5: ES5VisitorMap = {
       const { id, init, start, end } = decl;
       const key = (id as Identifier).name;
       const value = init ? itprNode.walk(init) : undefined;
-      /**
-       * var a = 1;
-       * var a;
-       * a;
-       *
-       * 如果已经有申明，那么init不存在时，不要写。
-       */
-      if (scope.type === ScopeType.BLOCK && kind === ValueDetailKind.VAR && scope.parent) {
-        const searchResult = scope.parent.search(key);
-        let targetScope: Scope = searchResult.getScope();
+      if (scope.type === ScopeType.BLOCK && kind === ValueDetailKind.VAR) {
+        const searchResult = scope.search(key);
+        let variableHasDeclared = true;
         try {
           searchResult.getValue();
         } catch (err) {
           // 如果不存在
           if (err instanceof ReferenceError) {
-            targetScope = searchResult.getScope().getRootScope();
+            variableHasDeclared = false;
           }
         }
         /**
-         * 首先，var a = 1; 直接就是declaration, 而不是拆成Assignment,所以先检测是否存在，然后在申明；
-         * 已经存在变量，且又申明了，不赋值
+         * 变量不存在 或者 没有默认值时申明；例如以下两句
+         * var abc = 1; // abc在scope取不到，申明
+         * var abc; // abc可以取到，但是init未空，不继续申明
          */
-        if (init != null) {
-          targetScope.declare(ValueDetailKind.VAR, key, value);
+        if (!variableHasDeclared || init != null) {
+          scope.declare(ValueDetailKind.VAR, key, value);
         }
       } else {
         scope.declare(kind as ValueDetailKind, key, value);

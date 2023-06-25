@@ -13,7 +13,7 @@ import * as ESTree from 'estree';
 
 export interface InterpreterOption {
   mode?: ModeType;
-  rootScope?: Record<string, any>;
+  context?: Record<string, any>;
   globalThis?: any;
 }
 
@@ -30,46 +30,34 @@ export class Interpreter {
     const {
       mode = DEFAULT_INTERPRETER_MODE,
       globalThis,
-      rootScope = Object.create(null),
+      context = Object.create(null),
     } = option || {};
 
     this.option = {
       mode,
       globalThis,
-      rootScope,
+      context,
     };
   }
 
-  public evaluate = (code: string, option?: Omit<InterpreterOption, 'rootScope'> & { scope?: InterpreterOption['rootScope'] | Scope }): any => {
-    const { mode, globalThis: rootGlobalThis, rootScope: rootScopeValue } = this.option;
+  public evaluate = (code: string): any => {
+    const { mode, globalThis, context } = this.option;
     const ast = parse(code, { ecmaVersion: 2023 }) as ESTree.Node;
 
-    const {
-      mode: evalMode,
-      globalThis: evalGlobalThis,
-      scope: evalScopeValue,
-    } = option || {};
-
-    let scope: Scope;
-    if (evalScopeValue instanceof Scope) {
-      scope = evalScopeValue;
-    } else {
-      // 如果eval设置了scope，就将rootScope合并至scope，否则以rootScope作为scope
-      const scopeValue = evalScopeValue ? Object.assign(evalScopeValue, rootScopeValue) : rootScopeValue;
-      scope = new Scope(ScopeType.BLOCK, null, Object.assign(scopeValue, internalScopeValueMap[evalMode || mode]));
-    }
+    const rootScope = new Scope(ScopeType.BLOCK, null, internalScopeValueMap[mode]);
+    const contextScope = context instanceof Scope ? context : new Scope(ScopeType.CONTEXT, rootScope, context);
 
     const ins = new Walker({
       sourceCode: code,
-      globalThis: evalGlobalThis || rootGlobalThis || scope.getScopeValue(),
-      scope,
-      rootScope: scope,
+      globalThis: globalThis || contextScope.getScopeValue(),
+      scope: contextScope,
+      contextScope,
       node: ast,
       visitorMap: es5,
     });
 
     ins.addScopeValue({
-      eval: (code: string) => this.evaluate(code, { scope, globalThis: evalGlobalThis, mode }),
+      eval: (code: string) => this.evaluate(code),
     });
 
     const result = ins.evaluate();

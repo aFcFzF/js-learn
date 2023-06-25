@@ -6,10 +6,18 @@
 import { Interpreter } from './model/Interpreter';
 
 const code = `
-var name = "hello"
-name = "world"
+delete a;
+a;
 `;
 
+
 // const a = new Interpreter().evaluate(code, { scope: { JSON, Function, Error, Math, Number } });
-const a = new Interpreter().evaluate(code);
+const a = new Interpreter({
+  context: {
+    a: 1,
+    b: 1,
+    c: 1,
+  },
+}).evaluate(code);
+
 console.log('result: ', a);

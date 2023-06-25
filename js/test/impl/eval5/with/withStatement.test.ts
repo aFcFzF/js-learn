@@ -128,7 +128,7 @@ test('with7', () => {
 
 test('with8', () => {
   const ctx: Record<string, any> = {};
-  const interpreter = new Interpreter({ rootScope: ctx });
+  const interpreter = new Interpreter({ context: ctx });
   const result = interpreter.evaluate(`
     try {
         var obj = {

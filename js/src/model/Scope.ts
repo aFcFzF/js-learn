@@ -24,6 +24,7 @@ export const DEFAULT_INTERNAL_FULL_SCOPE_DATA: ScopeValue = {
 export enum ScopeType {
   FUNCTION = 'function',
   BLOCK = 'block',
+  READONLY = 'readonly',
 }
 
 export interface ScopeSearchResult {
@@ -192,12 +193,12 @@ export class Scope {
   private defineVar(rawName: string, value: unknown): void {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let scope: Scope = this;
-    while (scope.parent && scope.type !== ScopeType.FUNCTION) {
+    while (scope.parent && scope.type === ScopeType.BLOCK) {
       scope = scope.parent;
     }
 
-    this.scopeValue[rawName] = value;
-    this.scopeDetail[rawName] = new ValueDetail({
+    scope.scopeValue[rawName] = value;
+    scope.scopeDetail[rawName] = new ValueDetail({
       kind: ValueDetailKind.VAR,
       name: rawName,
       value,

@@ -12,7 +12,7 @@ import { ValueDetail, ValueDetailKind } from './ValueDetail';
 interface WalkOption<T extends ESTree.Node> {
   node: T;
   scope: Scope;
-  rootScope: Scope;
+  contextScope: Scope;
   visitorMap: ES5VisitorMap;
   globalThis: unknown;
   sourceCode: string;
@@ -23,7 +23,7 @@ export class Walker<T extends ESTree.Node> {
 
   public scope: Scope;
 
-  public rootScope: Scope;
+  public contextScope: Scope;
 
   public globalThis: unknown;
 
@@ -37,13 +37,13 @@ export class Walker<T extends ESTree.Node> {
       scope,
       globalThis,
       visitorMap,
-      rootScope,
+      contextScope,
       sourceCode,
     } = option;
 
     this.node = node;
     this.scope = scope;
-    this.rootScope = rootScope;
+    this.contextScope = contextScope;
     this.globalThis = globalThis;
     this.visitorMap = visitorMap;
     this.sourceCode = sourceCode;
@@ -54,7 +54,7 @@ export class Walker<T extends ESTree.Node> {
       node: esNode,
       scope: scope || this.scope,
       visitorMap: this.visitorMap,
-      rootScope: this.rootScope,
+      contextScope: this.contextScope,
       globalThis: this.globalThis,
       sourceCode: this.sourceCode,
     });
