@@ -38,6 +38,15 @@ function fn() {
 }
 ```
 - 问题4: try {} catch {} 遇到Signal结束运行并向上冒泡。
+- 问题5: new 和evaluate都支持传作用域，到底形成几个
+  1. 形成1个，那么this指向可以确定了，就是rootScope
+  2. 但是删除evaluate scope上的属性，不要影响rootScope
+  3. 所以最终还得是两个，并且用Object.create连起来
+
+### 参考文献
+|地址|备注|
+|--|--|
+|https://www.apiref.com/javascript-zh/Language_Resources.htm|es规范|
 
 ### 进展：
 262-test:
@@ -46,6 +55,12 @@ function fn() {
 |2023.06.12|588/10683|5.50%|全量|
 |2022.06.12|778/10683|7.28%|注入Number；支持三元表达式|
 |2022.06.12|1346/1068|12.60%|升级version|
+
+262-test-eval5:
+|spec|日期|通过数|通过率|备注|
+|--|--|--|--|
+|ch07-词法：字面量、标点符号、保留字|2023.06.21|483/548|88.14%|忽略strict mode、增加globalThis为空对象|
+|ch08-各种类型||修复Infinity|
 
 eval5-test:
 |日期|通过数|通过率|备注|
