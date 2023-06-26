@@ -5,14 +5,13 @@
 
 import * as ESTree from 'estree';
 import { ES5NodeType, ES5NodeVisitor, ES5VisitorMap } from '../standard/es5';
-import { Scope, ScopeValue } from './Scope';
-import { ValueDetail, ValueDetailKind } from './ValueDetail';
+import { Scope } from './Scope';
 
 
 interface WalkOption<T extends ESTree.Node> {
   node: T;
   scope: Scope;
-  contextScope: Scope;
+  rootScope: Scope;
   visitorMap: ES5VisitorMap;
   globalThis: unknown;
   sourceCode: string;
@@ -23,7 +22,7 @@ export class Walker<T extends ESTree.Node> {
 
   public scope: Scope;
 
-  public contextScope: Scope;
+  public rootScope: Scope;
 
   public globalThis: unknown;
 
@@ -37,13 +36,13 @@ export class Walker<T extends ESTree.Node> {
       scope,
       globalThis,
       visitorMap,
-      contextScope,
+      rootScope,
       sourceCode,
     } = option;
 
     this.node = node;
     this.scope = scope;
-    this.contextScope = contextScope;
+    this.rootScope = rootScope;
     this.globalThis = globalThis;
     this.visitorMap = visitorMap;
     this.sourceCode = sourceCode;
@@ -54,7 +53,7 @@ export class Walker<T extends ESTree.Node> {
       node: esNode,
       scope: scope || this.scope,
       visitorMap: this.visitorMap,
-      contextScope: this.contextScope,
+      rootScope: this.rootScope,
       globalThis: this.globalThis,
       sourceCode: this.sourceCode,
     });
@@ -67,19 +66,7 @@ export class Walker<T extends ESTree.Node> {
     throw `${instance.node.type} not supported!`;
   }
 
-  public evaluate(): any {
+  public run(): any {
     return this.walk(this.node);
-  }
-
-  public addScopeValue(scopeData: ScopeValue): void {
-    Object.entries(scopeData).forEach(([name, value]) => {
-      const scopeValue = this.scope.getScopeValue();
-      scopeValue[name] = new ValueDetail({
-        value,
-        scope: this.scope,
-        name,
-        kind: ValueDetailKind.VAR,
-      });
-    });
   }
 }

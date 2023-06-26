@@ -10,6 +10,7 @@ import { Scope, ScopeType, DEFAULT_INTERNAL_FULL_SCOPE_DATA, ScopeValue } from '
 import { Walker } from './Walker';
 import { parse } from 'acorn';
 import * as ESTree from 'estree';
+import {ValueDetailKind} from './ValueDetail';
 
 export interface InterpreterOption {
   mode?: ModeType;
@@ -45,22 +46,20 @@ export class Interpreter {
     const ast = parse(code, { ecmaVersion: 2023 }) as ESTree.Node;
 
     const rootScope = new Scope(ScopeType.BLOCK, null, internalScopeValueMap[mode]);
-    const contextScope = context instanceof Scope ? context : new Scope(ScopeType.CONTEXT, rootScope, context);
+    const contextScope = context instanceof Scope ? context : new Scope(ScopeType.READONLY, rootScope, context);
 
     const ins = new Walker({
       sourceCode: code,
       globalThis: globalThis || contextScope.getScopeValue(),
       scope: contextScope,
-      contextScope,
+      rootScope,
       node: ast,
       visitorMap: es5,
     });
 
-    ins.addScopeValue({
-      eval: (code: string) => this.evaluate(code),
-    });
+    rootScope.declare(ValueDetailKind.VAR, 'eval', () => (code: string) => this.evaluate(code));
 
-    const result = ins.evaluate();
+    const result = ins.run();
     return result;
   };
 }

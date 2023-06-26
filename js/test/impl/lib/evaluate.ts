@@ -3,14 +3,11 @@
  * @author afcfzf(9301462@qq.com)
  */
 
-import { Interpreter } from '../../../src/model/Interpreter';
+import { runInContext, Interpreter } from '../../../src/';
 
-export const testEval = (...args: Parameters<Interpreter['evaluate']>): any => {
-  const ins = new Interpreter();
-  return ins.evaluate(...args);
-};
+export const testEval = runInContext;
 
-export const evaluate = testEval;
+export const evaluate = runInContext;
 
 export {
   Interpreter,

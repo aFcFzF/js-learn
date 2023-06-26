@@ -14,7 +14,6 @@ export enum ValueDetailKind {
 interface ValueDetailOption {
   kind: ValueDetailKind;
   name: string;
-  value: any;
   scope: Scope;
 }
 

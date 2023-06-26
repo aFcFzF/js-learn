@@ -216,6 +216,6 @@ test('with11', () => {
     }
 `;
 
-  const a = new Interpreter().evaluate(code, { scope: { JSON } });
+  const a = new Interpreter({ context: { JSON } }).evaluate(code);
   expect(a).toEqual(1);
 });

@@ -81,10 +81,9 @@ export class Scope {
     this.parent = parent;
     this.scopeValue = scopeValue;
 
-    Object.entries(scopeValue).forEach(([key, value]) => {
+    Object.entries(scopeValue).forEach(([key]) => {
       this.scopeDetail[key] = new ValueDetail({
         kind: ValueDetailKind.VAR,
-        value,
         name: key,
         scope: this,
       });
@@ -201,7 +200,6 @@ export class Scope {
     scope.scopeDetail[rawName] = new ValueDetail({
       kind: ValueDetailKind.VAR,
       name: rawName,
-      value,
       scope,
     });
   }
@@ -211,7 +209,6 @@ export class Scope {
     this.scopeDetail[rawName] = new ValueDetail({
       kind: ValueDetailKind.LET,
       name: rawName,
-      value,
       scope: this,
     });
   }
@@ -221,7 +218,6 @@ export class Scope {
     this.scopeDetail[rawName] = new ValueDetail({
       kind: ValueDetailKind.CONST,
       name: rawName,
-      value,
       scope: this,
     });
   }

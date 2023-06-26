@@ -65,7 +65,7 @@ class Tester {
 
   private evaluate(code: string): void {
     new Interpreter({
-      rootScope: {
+      context: {
         globalThis: {},
         Symbol,
         eval,
