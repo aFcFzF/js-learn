@@ -6,9 +6,9 @@
 import { testEval } from '../../lib/evaluate';
 
 describe('变量定义', () => {
-  // it('只定义不返回值, 赋值才返回值', () => {
-  //   expect(testEval('const a = 1;')).toBe(undefined);
-  // });
+  it('只定义不返回值, 赋值才返回值', () => {
+    expect(testEval('const a = 1;')).toBe(undefined);
+  });
 
   it('定义简单值和取值', () => {
     const result = testEval('const a = 1; a;');

@@ -59,7 +59,7 @@ test('with4', () => {
     obj.a
 
     `,
-    { scope: ctx },
+    ctx,
   );
 
   expect(result).toEqual(20);
@@ -81,7 +81,7 @@ test('with5', () => {
     obj.a
 
     `,
-    { scope: ctx },
+    ctx,
   );
 
   expect(result).toEqual(20);
@@ -101,7 +101,7 @@ test('with6', () => {
 
     b
     `,
-    { scope: ctx },
+    ctx,
   );
 
   expect(result).toEqual(20);
@@ -166,7 +166,7 @@ test('with9', () => {
       [f(),(0,f1)(),f2()]
     }
     `,
-    { scope: ctx },
+    ctx,
   );
 
   expect(result).toEqual([undefined, undefined, 10]);
@@ -203,7 +203,7 @@ test('with10', () => {
         }
     }
     `,
-    { scope: ctx },
+    ctx,
   );
 
   expect(result).toEqual([undefined, undefined, 10, 11, undefined]);

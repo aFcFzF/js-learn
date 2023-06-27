@@ -24,7 +24,7 @@ export const DEFAULT_INTERNAL_FULL_SCOPE_DATA: ScopeValue = {
 export enum ScopeType {
   FUNCTION = 'function',
   BLOCK = 'block',
-  READONLY = 'readonly',
+  ENV = 'env',
 }
 
 export interface ScopeSearchResult {
@@ -72,9 +72,9 @@ export class Scope {
    * 当前作用域
    * 必须存引用，场景: this === window;
    */
-  private scopeValue: ScopeValue;
+  protected scopeValue: ScopeValue;
 
-  private scopeDetail: ScopeDetail = {};
+  protected scopeDetail: ScopeDetail = {};
 
   constructor(type: ScopeType, parent: Scope | null = null, scopeValue: ScopeValue = {}) {
     this.type = type;
@@ -146,17 +146,16 @@ export class Scope {
   }
 
   /**
-   * 直接读取变量时，不存在就创建
-   * @param rawName
-   * @returns
+   * rootScope在Scope里拿不到，原因是：一直递归到env，只能拿到最后一层，否则和search到的scope不一致
    */
-  public getRootScope(): Scope {
-    if (this.parent) {
-      return this.parent.getRootScope();
-    }
+  // public getRootScope(): Scope {
+  //   // env 是rootEnvScope
+  //   if (this.parent) {
+  //     return this.parent.getRootScope();
+  //   }
 
-    return this;
-  }
+  //   return this;
+  // }
 
   public declare(kind: ValueDetailKind, rawName: string, value: any): void {
     if (this.checkDefinition(kind, rawName)) {
@@ -192,7 +191,8 @@ export class Scope {
   private defineVar(rawName: string, value: unknown): void {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let scope: Scope = this;
-    while (scope.parent && scope.type === ScopeType.BLOCK) {
+    // 这里为啥筛选parent。如果是 fn => () => { var a = 1; } 是定义在Function还是Block
+    while (scope.parent && scope.parent.type === ScopeType.BLOCK) {
       scope = scope.parent;
     }
 

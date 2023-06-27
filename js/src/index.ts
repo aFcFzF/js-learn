@@ -24,18 +24,19 @@ export {
 
 
 // const a = new Interpreter().evaluate(code, { scope: { JSON, Function, Error, Math, Number } });
-const context = {
-  a: 1,
-  b: 1,
-  c: 1,
-};
+const context = { a: 1, b: 1, c: 1, data: { z: 1 } };
 
+// const rootContext = { a: 1, b: 1, c: 1 };
+//   const interpreter = new Interpreter({
+//     context: rootContext,
+//   });
+//   const result = interpreter.evaluate('');
+//   expect(result).toEqual([2, 1, 1]);
 const code = `
-delete a;
-// a;
-this.b === b;
+c = 2;
+c;
 `;
 
-const a = runInContext(code, context);
+const a = runInContext(code, context, { globalThis: context });
 
-console.log('result: ', a, context);
+console.log('result: ', a);

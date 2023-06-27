@@ -33,12 +33,32 @@ test('global this', () => {
   };
   const a = evaluate(
     `
-        this
+      this
   `,
-    { globalThis: ctx },
+    ctx,
   );
 
   expect(a === ctx).toEqual(true);
+});
+
+test('global this -1', () => {
+  const ctx = {
+    test: 1,
+  };
+
+  const globalThis = 1;
+
+  const a = evaluate(
+    `
+      this
+  `,
+    ctx,
+    {
+      globalThis,
+    },
+  );
+
+  expect(a).toEqual(1);
 });
 
 test('global this equal rootScope', () => {

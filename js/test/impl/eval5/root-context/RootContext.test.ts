@@ -6,7 +6,7 @@
 import { Interpreter } from '../../lib/evaluate';
 
 test('rootContext -1', () => {
-  const rootContext = { a: 1, b: 1, c: 1 };
+  const rootContext = { a: 2, b: 1, c: 1 };
   const interpreter = new Interpreter({
     context: rootContext,
   });
@@ -22,11 +22,12 @@ test('rootContext -2', () => {
   interpreter.evaluate(`
     var t = 1;
     y = 2
+    c = 3
 	`);
   expect(rootContext.t).toEqual(1);
   expect(rootContext.y).toEqual(2);
-  expect(rootContext.t).toEqual(undefined);
-  expect(rootContext.y).toEqual(undefined);
+  expect(rootContext.a).toEqual(1);
+  expect(rootContext.c).toEqual(3);
 });
 
 test('rootContext -2.1', () => {
@@ -64,12 +65,12 @@ test('rootContext -3', () => {
   const interpreter = new Interpreter({
     context: rootContext,
   });
-  const result = interpreter.evaluate(`
+  const fn = (): any[] => interpreter.evaluate(`
         delete a;
         delete b;
         [a,b];
     `);
-  expect(result).toEqual([1, 1]);
+  expect(fn).toThrow(ReferenceError);
 });
 
 test('rootContext -4', () => {
@@ -82,9 +83,9 @@ test('rootContext -4', () => {
 			delete a;
 			delete b;
 			delete data.z;
-			[a,b, data.z, typeof eval];
+			[typeof a, typeof b, data.z, typeof eval];
     `);
-  expect(result).toEqual([1, 1, undefined, 'undefined']);
+  expect(result).toEqual(['undefined', 'undefined', undefined, 'undefined']);
 });
 
 test('rootContext -5', () => {
@@ -95,22 +96,10 @@ test('rootContext -5', () => {
 
   const result = interpreter.evaluate(`
         c = 2;
+        data.z = 3;
         c;
     `);
   expect(result).toEqual(2);
-  expect(rootContext.c).toEqual(1);
-});
-
-test('rootContext -6', () => {
-  const rootContext: Record<string, any> = { a: 1, b: 1, c: 1, data: { z: 1 } };
-  const interpreter = new Interpreter({
-    context: rootContext,
-  });
-
-  const result = interpreter.evaluate(`
-        c = 2;
-        c;
-    `);
-  expect(result).toEqual(2);
-  expect(rootContext.c).toEqual(1);
+  expect(rootContext.c).toEqual(2);
+  expect(rootContext.data.z).toEqual(3);
 });

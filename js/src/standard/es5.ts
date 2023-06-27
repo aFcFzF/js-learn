@@ -491,7 +491,7 @@ export const es5: ES5VisitorMap = {
   },
 
   AssignmentExpression(itprNode) {
-    const { node: { left, right, operator } } = itprNode;
+    const { node: { left, right, operator }, rootScope } = itprNode;
     // lsh找Variable: 值的容器
     let leftValRef: ValueRef;
     if (left.type === 'Identifier') {
@@ -502,7 +502,7 @@ export const es5: ES5VisitorMap = {
         leftValRef = scopeValueRef;
       } catch (err) {
         if (err instanceof ReferenceError && operator === '=' && left.type === 'Identifier') {
-          const rootScope = scopeValueRef.getScope().getRootScope();
+          // 主要只能定义到rootScope，不要定义在env
           rootScope.declare(ValueDetailKind.VAR, name, undefined);
           leftValRef = new ValueRef(rootScope.getScopeValue(), name);
         } else {

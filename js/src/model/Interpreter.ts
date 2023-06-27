@@ -10,7 +10,7 @@ import { Scope, ScopeType, DEFAULT_INTERNAL_FULL_SCOPE_DATA, ScopeValue } from '
 import { Walker } from './Walker';
 import { parse } from 'acorn';
 import * as ESTree from 'estree';
-import {ValueDetailKind} from './ValueDetail';
+import { ValueDetailKind } from './ValueDetail';
 
 export interface InterpreterOption {
   mode?: ModeType;
@@ -45,19 +45,26 @@ export class Interpreter {
     const { mode, globalThis, context } = this.option;
     const ast = parse(code, { ecmaVersion: 2023 }) as ESTree.Node;
 
-    const rootScope = new Scope(ScopeType.BLOCK, null, internalScopeValueMap[mode]);
-    const contextScope = context instanceof Scope ? context : new Scope(ScopeType.READONLY, rootScope, context);
+    /**
+     * envScope和rootScope区别：
+     * envScope定义了执行环境，比如Number、Array、Object、Date等，是只读终点；
+     * rootScope是可读可写，是declare终点。
+     * 原因：用户传进来一个自定义context，不要合并，不要添加env到里面
+     */
+    const envScope = new Scope(ScopeType.ENV, null, internalScopeValueMap[mode]);
+    const rootScope = context instanceof Scope ? context : new Scope(ScopeType.BLOCK, envScope, context);
 
     const ins = new Walker({
       sourceCode: code,
-      globalThis: globalThis || contextScope.getScopeValue(),
-      scope: contextScope,
+      globalThis: globalThis || context,
+      scope: rootScope,
       rootScope,
+      envScope,
       node: ast,
       visitorMap: es5,
     });
 
-    rootScope.declare(ValueDetailKind.VAR, 'eval', () => (code: string) => this.evaluate(code));
+    envScope.declare(ValueDetailKind.VAR, 'eval', () => (code: string) => this.evaluate(code));
 
     const result = ins.run();
     return result;

@@ -12,6 +12,7 @@ interface WalkOption<T extends ESTree.Node> {
   node: T;
   scope: Scope;
   rootScope: Scope;
+  envScope: Scope;
   visitorMap: ES5VisitorMap;
   globalThis: unknown;
   sourceCode: string;
@@ -23,6 +24,8 @@ export class Walker<T extends ESTree.Node> {
   public scope: Scope;
 
   public rootScope: Scope;
+
+  public envScope: Scope;
 
   public globalThis: unknown;
 
@@ -37,12 +40,14 @@ export class Walker<T extends ESTree.Node> {
       globalThis,
       visitorMap,
       rootScope,
+      envScope,
       sourceCode,
     } = option;
 
     this.node = node;
     this.scope = scope;
     this.rootScope = rootScope;
+    this.envScope = envScope;
     this.globalThis = globalThis;
     this.visitorMap = visitorMap;
     this.sourceCode = sourceCode;
@@ -54,6 +59,7 @@ export class Walker<T extends ESTree.Node> {
       scope: scope || this.scope,
       visitorMap: this.visitorMap,
       rootScope: this.rootScope,
+      envScope: this.envScope,
       globalThis: this.globalThis,
       sourceCode: this.sourceCode,
     });

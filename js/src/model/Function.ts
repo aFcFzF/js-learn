@@ -99,10 +99,11 @@ export const createFunction = (itprNode: Walker<FunctionExpression | FunctionDec
       }
     }
 
-    fnScope.declare(ValueDetailKind.VAR, 'this', context);
+    // code = `function fn(){} fn()` 时，this不要定义在global，应该是执行后，定义在fn block内部
+    fnScope.declare(ValueDetailKind.CONST, 'this', context);
 
     if (!argumentsIsDefined) {
-      fnScope.declare(ValueDetailKind.VAR, 'arguments', argsValue);
+      fnScope.declare(ValueDetailKind.CONST, 'arguments', argsValue);
     }
 
     const result = itprNode.walk(body, fnScope);

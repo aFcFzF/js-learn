@@ -220,7 +220,7 @@ test('function overlap1', () => {
       }
       overlap1();
     `,
-    { scope: ctx },
+    ctx,
   );
 
   deepEqual(a, 2);
@@ -248,7 +248,7 @@ test('function overlap3', () => {
     `
         var overlap1 = 1;
     `,
-    { scope: ctx },
+    ctx,
   );
 
   const a = evaluate(
@@ -258,7 +258,7 @@ test('function overlap3', () => {
         }
         typeof overlap1;
     `,
-    { scope: ctx },
+    ctx,
   );
 
   deepEqual(a, 'function');
@@ -274,7 +274,7 @@ test('function overlap4', () => {
 
       typeof dat
     `,
-    { scope: ctx },
+    ctx,
   );
 
   deepEqual(a, 'undefined');
@@ -290,7 +290,7 @@ test('function overlap5', () => {
 
       typeof dat
     `,
-    { scope: ctx },
+    ctx,
   );
 
   deepEqual(a, 'function');
@@ -307,7 +307,7 @@ test('function overlap5', () => {
 
       typeof d1
     `,
-    { scope: ctx },
+    ctx,
   );
 
   deepEqual(a, 'undefined');
