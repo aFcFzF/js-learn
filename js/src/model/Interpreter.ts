@@ -3,7 +3,7 @@
  * @author afcfzf(9301462@qq.com)
  */
 
-import { DEFAULT_INTERPRETER_MODE } from '../const';
+import { DEFAULT_INTERPRETER_MODE, EVAL_FUNCTION_IDENTIFIER } from '../const';
 import { es5 } from '../standard/es5';
 import { ModeType } from '../types';
 import { Scope, ScopeType, DEFAULT_INTERNAL_FULL_SCOPE_DATA, ScopeValue } from './Scope';
@@ -56,7 +56,7 @@ export class Interpreter {
 
     const ins = new Walker({
       sourceCode: code,
-      globalThis: globalThis || context,
+      globalThis: globalThis === undefined ? context : globalThis,
       scope: rootScope,
       rootScope,
       envScope,
@@ -64,7 +64,23 @@ export class Interpreter {
       visitorMap: es5,
     });
 
-    envScope.declare(ValueDetailKind.VAR, 'eval', () => (code: string) => this.evaluate(code));
+    const evalFunction = (code: string, scope: Scope): any => {
+      const itpr = new Interpreter({
+        mode,
+        globalThis,
+        context: scope,
+      });
+
+      return itpr.evaluate(code);
+    };
+
+    Object.defineProperty(evalFunction, EVAL_FUNCTION_IDENTIFIER, {
+      value: EVAL_FUNCTION_IDENTIFIER,
+      writable: false,
+      enumerable: true,
+    });
+
+    envScope.declare(ValueDetailKind.VAR, 'eval', evalFunction);
 
     const result = ins.run();
     return result;

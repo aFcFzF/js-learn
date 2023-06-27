@@ -49,13 +49,14 @@ import {
   Statement,
   WithStatement,
 } from 'estree';
-import { Walker } from '../model/Walker';
+import type { Walker } from '../model/Walker';
 import { Scope, ScopeType, ScopeValueRef } from '../model/Scope';
 import { ValueDetailKind } from '../model/ValueDetail';
 import { Signal, SignalType } from '../model/Signal';
 import { createFunction, updateFuncInfo } from '../model/Function';
 import { getHostingStatements, hasOwnProperty } from '../utils';
 import { ValueRef } from '../model/ValueRef';
+import { EVAL_FUNCTION_IDENTIFIER } from '../const';
 
 export interface ES5NodeMap {
   BinaryExpression: BinaryExpression;
@@ -641,6 +642,13 @@ export const es5: ES5VisitorMap = {
     if (!fn) {
       throw new Error(`function not exist callee.name！${JSON.stringify(callee)}`);
     }
+
+    // 如果是eval，
+    if (callee.type === 'Identifier' && fn.EVAL_FUNCTION_IDENTIFIER === EVAL_FUNCTION_IDENTIFIER) {
+      const code = argsVal[0];
+      return fn.call(context, code, scope);
+    }
+
     return fn.call(context, ...argsVal);
   },
 

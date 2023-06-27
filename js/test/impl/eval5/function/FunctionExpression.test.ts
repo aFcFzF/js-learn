@@ -188,12 +188,12 @@ var x = function u() { u = 2; return u };
 test('function call non context', () => {
   const a = evaluate(`
         function call_1(){
-            return typeof this;
+            return this;
         }
         call_1();
-    `);
+    `, {}, { globalThis: null });
 
-  deepEqual(a, 'undefined');
+  deepEqual(a, null);
 });
 
 test('function call default context', () => {
@@ -202,7 +202,7 @@ test('function call default context', () => {
             return this;
         }
         call_2();
-    `, { globalThis: 'xj' });
+    `, {}, { globalThis: 'xj' });
 
   deepEqual(a, 'xj');
 });
@@ -314,6 +314,7 @@ test('function overlap5', () => {
 });
 
 test('function .call -1', () => {
+  const globalThis = {};
   const a = evaluate(
     `
         function test(){
@@ -322,9 +323,10 @@ test('function .call -1', () => {
         test();
     `,
     {},
+    { globalThis },
   );
 
-  deepEqual(a, undefined);
+  deepEqual(a, globalThis);
 });
 
 test('function .call -2', () => {
@@ -374,6 +376,7 @@ test('function .call -4', () => {
 });
 
 test('function .call -5', () => {
+  const ctx = {};
   const a = evaluate(
     `
         function test(){
@@ -385,10 +388,10 @@ test('function .call -5', () => {
         };
         (0, da.func)();
     `,
-    {},
+    ctx,
   );
 
-  deepEqual(a, undefined);
+  deepEqual(a, ctx);
 });
 
 test('function toString -1', () => {
