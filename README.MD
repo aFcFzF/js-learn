@@ -42,6 +42,7 @@ function fn() {
   1. 形成1个，那么this指向可以确定了，就是rootScope
   2. 但是删除evaluate scope上的属性，不要影响rootScope
   3. 所以最终还得是两个，并且用Object.create连起来
+- 问题6: 函数一定是block包起来的
 
 ### 参考文献
 |地址|备注|
