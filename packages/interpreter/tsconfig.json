@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "module": "CommonJS",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "target": "ES5",
+    "sourceMap": true,
+    "strict": true,
+    "outDir": "./dist",
+    "incremental": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@": ["./"],
+      "@/*": ["./*"]
+    },
+  },
+  "include": [
+    "./src",
+    "./test/**/*",
+    "jest.config.js",
+    "./babel.config.ts"
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalResolver": true,
+    "experimentalSpecifierResolution": "node"
+  },
+}
