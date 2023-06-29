@@ -3,7 +3,7 @@
  * @author afcfzf(9301462@qq.com)
  */
 
-import { JestConfigWithTsJest} from 'ts-jest';
+import { JestConfigWithTsJest } from 'ts-jest';
 
 const config: JestConfigWithTsJest = {
   preset: 'ts-jest',

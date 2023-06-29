@@ -1,8 +1,3 @@
-/**
- * @file gulpfile 编译文件
- * @author Yu Zong(liuxuanzy@qq.com)
- */
-
 import path from 'path';
 import del from 'del';
 import glob from 'glob';
@@ -11,6 +6,7 @@ import babel from 'gulp-babel';
 import ts from 'gulp-typescript';
 import merge from 'merge2';
 import * as fs from 'fs';
+import tsConfig from './tsconfig.json';
 
 const getBabelConfig = (modules: 'commonjs' | false): Record<string, unknown> => ({
   comments: false,
@@ -76,7 +72,7 @@ function createBuildTask(name: string): string {
   const cwd = resolve('packages', name);
 
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const tsConfig = require(resolve(cwd, 'tsconfig.json'));
+  // const tsConfig = require(resolve(cwd, 'tsconfig.json'));
 
   gulp.task(`build-ts-${name}`, () => {
     const realConfig = Object.assign({}, tsConfig.compilerOptions, {
@@ -136,11 +132,4 @@ gulpPackages.forEach((packagePath) => {
 gulp.task('default', gulp.series(
   ...delTasks,
   ...buildTasks,
-  // 'del-dist',
 ));
-
-// gulp.task('watch-ts', () => {
-//   gulp.watch(files, gulp.series('default'));
-// });
-
-// gulp.task('watch', gulp.series('default', 'watch-ts'));
