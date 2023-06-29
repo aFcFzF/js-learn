@@ -6,12 +6,10 @@
 import { globSync } from 'glob';
 import { resolve, parse } from 'path';
 import { readFileSync } from 'fs';
-import { Interpreter } from '@/src/model/Interpreter';
 import chalk from 'chalk';
+import { runInContext } from '../../src/index';
 
 class Tester {
-  // /Volumes/code/personal/languageStudy/js/test/262/specs/es5/ch07/7.8/7.8.3
-  // private static targetPaths = globSync(resolve(__dirname, '../specs/**/*.js'));
   private static targetPaths = resolve(__dirname, '../262/specs/es5/ch08/**/*.js');
 
   private static libsPath = resolve(__dirname, './lib/es5/**/*.js');
@@ -64,23 +62,20 @@ class Tester {
   }
 
   private evaluate(code: string): void {
-    new Interpreter({
-      context: {
-        globalThis: {},
-        Symbol,
-        eval,
-        Function,
-        Error,
-        Math,
-        Number,
-        SyntaxError,
-        ReferenceError,
-        Boolean,
-        String,
-        isNaN,
-        Infinity,
-      },
-    }).evaluate(code);
+    runInContext(code , {
+      Symbol,
+      eval,
+      Function,
+      Error,
+      Math,
+      Number,
+      SyntaxError,
+      ReferenceError,
+      Boolean,
+      String,
+      isNaN,
+      Infinity,
+    }).evaluate();
   }
 }
 

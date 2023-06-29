@@ -15,7 +15,7 @@ module.exports = {
     node: true,
     jest: true,
   },
-  ignorePatterns: ['.eslintrc.js'],
+  ignorePatterns: ['.eslintrc.js', '__test__'],
   rules: {
     '@typescript-eslint/explicit-member-accessibility': [
       'error',

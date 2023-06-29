@@ -1,6 +1,6 @@
 import { evaluate } from '../../lib/evaluate';
 
-test('ArrayExpression-1', () => {
+test('ArrayExpression-1', ()=> {
   const arr = evaluate(`
 var arr = [1, 2, 3];
 arr.push(4);

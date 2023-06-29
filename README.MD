@@ -62,6 +62,7 @@ function fn() {
 |--|--|--|--|--|
 |ch07-词法：字面量、标点符号、保留字|2023.06.21|483/548|88.14%|忽略strict mode、增加globalThis为空对象|
 |ch08-各种类型||修复Infinity|
+|修复this、scopeRoot问题|2023.06.29|90%|this和scope的起点是同一个，且纯对象|
 
 eval5-test:
 |日期|通过数|通过率|备注|
