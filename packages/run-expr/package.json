@@ -1,5 +1,6 @@
 {
   "name": "run-expr",
+  "license": "MIT",
   "dependencies": {
     "acorn": "^8.8.2"
   },
@@ -7,8 +8,7 @@
     "main": "tsx ./src/index.ts",
     "test": "npx jest",
     "test:262": "tsx ./test/262/main.ts",
-    "test:eval5": "npx jest ./test/impl/eval5",
-    "test:impl": "npx jest ./test/impl/specs"
-  },
-  "license": "MIT"
+    "test:eval5": "npx jest ./__test__/impl/eval5",
+    "test:impl": "npx jest ./__test__/impl/specs"
+  }
 }

@@ -1,6 +1,6 @@
 import path from 'path';
 import del from 'del';
-import glob from 'glob';
+import { globSync } from 'glob';
 import gulp from 'gulp';
 import babel from 'gulp-babel';
 import ts from 'gulp-typescript';
@@ -42,7 +42,7 @@ const gulpPackages: string[] = [];
 
 const files: string[] = [];
 
-glob.globSync('packages/*').forEach((name) => {
+globSync('packages/*').forEach((name) => {
   const pkg = JSON.parse(fs.readFileSync(`./${name}/package.json`, 'utf8'));
 
   if (pkg.private || pkg.scripts?.build) {
