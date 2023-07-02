@@ -4,7 +4,9 @@
  */
 
 export class Token {
-  public static eof: Token = new Token(-1);
+  public static EOF: Token = new Token(-1);
+
+  public static EOL = '\\n';
 
   private lineNumber: number;
 

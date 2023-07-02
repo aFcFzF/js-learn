@@ -17,6 +17,13 @@ module.exports = {
   },
   ignorePatterns: ['.eslintrc.js', '__test__'],
   rules: {
+    '@typescript-eslint/naming-convention': [
+      'warn',
+      {
+        selector: "class",
+        format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+      }
+    ],
     '@typescript-eslint/explicit-member-accessibility': [
       'error',
       {
